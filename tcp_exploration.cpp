@@ -25,6 +25,8 @@ main(
     }
 
     const char * port_number = argv[1];
+    unsigned int address_count = 0;
+    char ip_str[INET6_ADDRSTRLEN];
 
     struct addrinfo *potential_addresses;
     struct addrinfo *iterator;
@@ -39,17 +41,18 @@ main(
     hints.ai_canonname = NULL;
     hints.ai_next = NULL;
 
+    int getaddrinfo_ret;
+    int endpoint;
+    int clients[2];
+    int i = 0;
 
-    int getaddrinfo_ret = getaddrinfo(NULL, port_number, &hints, &potential_addresses);
+    getaddrinfo_ret = getaddrinfo(NULL, port_number, &hints, &potential_addresses);
     if (getaddrinfo_ret != 0) {
         std::cerr << gai_strerror(getaddrinfo_ret);
         return (-2);
     }
 
     std::cout << "Detecting addresses\n";
-
-    unsigned int address_count = 0;
-    char ip_str[INET6_ADDRSTRLEN];
 
     for (iterator = potential_addresses; iterator != NULL; iterator = iterator->ai_next) {
         void * address;
@@ -75,26 +78,24 @@ main(
 
     iterator = potential_addresses;
 
-    int sock_fd = socket(iterator->ai_family, iterator->ai_socktype, iterator->ai_protocol);
-    if (sock_fd == -1) {
+    endpoint = socket(iterator->ai_family, iterator->ai_socktype, iterator->ai_protocol);
+    if (endpoint == -1) {
         std::cerr << "Error while creating socket\n";
         freeaddrinfo(potential_addresses);
         return (-4);
     }
-fcntl(sock_fd, F_SETFL, O_NONBLOCK);
+fcntl(endpoint, F_SETFL, O_NONBLOCK);
 
-    int bind_ret = bind(sock_fd, iterator->ai_addr, iterator->ai_addrlen);
-    if (bind_ret == -1) {
+    if (bind(endpoint, iterator->ai_addr, iterator->ai_addrlen) == -1) {
         std::cerr << "Error while binding socket\n";
-        close(sock_fd);
+        close(endpoint);
         freeaddrinfo(potential_addresses);
         return (-5);
     }
 
-    int listen_ret = listen(sock_fd, 3);
-    if (listen_ret == -1) {
+    if (listen(endpoint, 3) == -1) {
         std::cerr << "Error while listening on socket\n";
-        close(sock_fd);
+        close(endpoint);
         freeaddrinfo(potential_addresses);
         return (-6);
     }
@@ -103,27 +104,27 @@ fcntl(sock_fd, F_SETFL, O_NONBLOCK);
     socklen_t client_addr_size = sizeof(client_addr);
 
     std::string response = "Hello World";
-
-    int clients[2];
-    int i = 0;
+    std::string reply(15, ' ');
 
     while (1) {
         if (i < 2) {
-            clients[i] = accept(sock_fd, (sockaddr *) &client_addr, &client_addr_size);
+            clients[i] = accept(endpoint, (sockaddr *) &client_addr, &client_addr_size);
             if (clients[i] != -1) {
                 ++i;
             }
         }
 
-        std::cin >> response;
+        // std::cin >> response;
         if (strncmp(response.data(), "exit", 4)) {
             break ;
         }
+        recv(endpoint, &reply.front(), reply.size(), 0);
+        std::cout << reply << '\n';
 
         // ssize_t bytes_sent =
-        for (int j = 0; j < i; ++j) {
-            send(clients[j], response.data(), response.length(), 0);
-        } 
+        // for (int j = 0; j < i; ++j) {
+        //     send(clients[j], response.data(), response.length(), 0);
+        // } 
         
         response.clear();
         // std::cout << response;
@@ -132,7 +133,7 @@ fcntl(sock_fd, F_SETFL, O_NONBLOCK);
         // close(clients[i]);
     }
 
-    close(sock_fd);
+    close(endpoint);
     freeaddrinfo(potential_addresses);
 
     return (0);

@@ -64,21 +64,13 @@ int main(int argc, char *argv[])
     // BUT there's a catch here, the response might take multiple calls
     // to recv() before it is completely received
     // will be demonstrated in another example to keep this minimal
-    while (1) {
-        ssize_t bytes_recv = recv(sockFD, &reply.front(), reply.size(), 0);
-
-        if (bytes_recv == -1) {
-            std::cerr << "Error while receiving bytes\n";
-            return -6;
-        }
-
-        if (!strncmp(reply.data(), "exit", 4)) {
-            break ;
-        }
-
-        std::cout << "\nClient recieved: " << reply << std::endl;
-        reply.clear();
+    auto bytes_recv = recv(sockFD, &reply.front(), reply.size(), 0);
+    if (bytes_recv == -1) {
+        std::cerr << "Error while receiving bytes\n";
+        return -6;
     }
+
+    std::cout << "\nClient recieved: " << reply << std::endl;
     close(sockFD);
     freeaddrinfo(p);
 
