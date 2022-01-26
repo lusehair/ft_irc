@@ -105,11 +105,11 @@ int main(int ac, char **av)
                 std::cout << ip_str << '\n';
             }
             break ;
-        }
+        } // End of if(bind())
 
         close(endpoint);
 
-    }
+    } // End of bind tries
 
     if (iterator == NULL) {
         std::cerr << "Could not bind\n";
@@ -127,60 +127,66 @@ int main(int ac, char **av)
     // fcntl(endpoint, F_SETFL, O_NONBLOCK);
 
     FD_SET(endpoint, &endpoint_set);
+    client_storage.insert(std::make_pair(endpoint, hints));
 
     memset(buffer, 0, sizeof(buffer));
 
     while (true) {
-        time_before_timeout.tv_sec = 20;
+        working_endpoint_set = endpoint_set;
+        time_before_timeout.tv_sec = 30;
         time_before_timeout.tv_usec = 0;
 
-        new_client_endpoint = accept(endpoint, client_addrinfo.ai_addr, &client_addrinfo.ai_addrlen);
-        if (new_client_endpoint != -1) {
-            FD_SET(new_client_endpoint, &endpoint_set);
-            client_storage.insert(std::make_pair(new_client_endpoint, client_addrinfo));
+        std::cout << "Waiting on select\n";
+        select_ret = select(client_storage.rbegin()->first + 1, &working_endpoint_set, NULL, NULL, &time_before_timeout);
 
-            std::cout << "Accepted conection from : ";
-            if (getnameinfo(client_addrinfo.ai_addr, client_addrinfo.ai_addrlen, ip_str, sizeof(ip_str), NULL, 0, NI_NUMERICHOST) != 0) {
-                std::cout << "'could not translate the socket address'\n" ;
-            } else {
-                std::cout << ip_str << '\n';
-            }
+        if (select_ret == -1) {
+            std::cerr << "Error in select()\n";
+        } else if (select_ret == 0) {
+            std::cout << "Nothing received in last 30 seconds\n";
+            break ;
+        } else {
 
-            fcntl(new_client_endpoint, F_SETFL, O_NONBLOCK);
+            for (i = 0; i < client_storage.rbegin()->first + 1 && select_ret > 0; ++i) {
+                if (FD_ISSET(i, &working_endpoint_set)) {
+                    --select_ret;
 
-            send(new_client_endpoint, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
+                    if (i == endpoint) {
+                        new_client_endpoint = accept(endpoint, client_addrinfo.ai_addr, &client_addrinfo.ai_addrlen);
 
-            // while (true) {
-            // 
+                        if (new_client_endpoint != -1) {
+                            fcntl(new_client_endpoint, F_SETFL, O_NONBLOCK);
+                            FD_SET(new_client_endpoint, &endpoint_set);
+                            client_storage.insert(std::make_pair(new_client_endpoint, client_addrinfo));
+                            send(new_client_endpoint, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
 
-                memcpy(&working_endpoint_set, &endpoint_set, sizeof(endpoint_set));
-                std::cout << "Waiting on select\n";
-                select_ret = select(client_storage.rbegin()->first + 1, &working_endpoint_set, NULL, NULL, &time_before_timeout);
-
-                if (select_ret == -1) {
-                    std::cerr << "Error in select()\n";
-                } else if (select_ret == 0) {
-                    std::cout << "Nothing received in last 20 seconds\n";
-                    break ;
-                } else {
-
-                    for (i = 0; i < client_storage.rbegin()->first + 1 && select_ret > 0; ++i) {
-                        if (FD_ISSET(i, &working_endpoint_set)) {
-                            --select_ret;
-
-                            if (i == endpoint) {
-                                std::cout << "connections to accept\n";
+                            std::cout << "Accepted conection from : ";
+                            if (getnameinfo(client_addrinfo.ai_addr, client_addrinfo.ai_addrlen, ip_str, sizeof(ip_str), NULL, 0, NI_NUMERICHOST) != 0) {
+                                std::cout << "'could not translate the socket address'\n" ;
                             } else {
-                                // for (;;) {
-                                    // send(i, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
-                                // }
-                                recv(i, buffer, sizeof(buffer), 0);
-                                std::cout << buffer;
+                                std::cout << ip_str << '\n';
+                            }
+
+                            for (int j = 0; j < client_storage.rbegin()->first + 1; ++j) {
+                                if (FD_ISSET(j, &endpoint_set) && j != endpoint && j != new_client_endpoint) {
+                                    send(j, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
+                                }
+                            }
+
+                        }
+
+                    } else {
+                        recv(i, buffer, sizeof(buffer), 0);
+
+                        for (int j = 0; j < client_storage.rbegin()->first + 1; ++j) {
+                            if (FD_ISSET(j, &endpoint_set) && j != endpoint) {
+                                send(j, buffer, strlen(buffer), MSG_DONTWAIT);
                             }
                         }
                     }
-                    
                 }
+            }
+        }
+                    
         //         for (i = 0; i < socket_count; ++i) {
         //             current_endpoint = endpoint_set.fds_bits[i];
 
@@ -195,16 +201,11 @@ int main(int ac, char **av)
         //             }
         //         }
         //         break ;
-            // }
-            
-        } else {
-            std::cerr << "Error while accepting connection\n";
-        }
 
         // Close everything
-        client_storage.erase(new_client_endpoint);
-        FD_CLR(new_client_endpoint, &endpoint_set);
-        close(new_client_endpoint);
+        // client_storage.erase(new_client_endpoint);
+        // FD_CLR(new_client_endpoint, &endpoint_set);
+        // close(new_client_endpoint);
 
     }
 
