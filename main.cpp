@@ -18,6 +18,8 @@
 
 #include <sys/time.h>
 
+// Log edition
+
 int main(int ac, char **av)
 {
 
