@@ -18,8 +18,6 @@
 
 #include <sys/time.h>
 
-// Log edition
-
 int main(int ac, char **av)
 {
 
@@ -45,6 +43,7 @@ int main(int ac, char **av)
     struct addrinfo *   iterator;
     struct addrinfo     hints;
     struct addrinfo     client_addrinfo;
+    char                translated_ip[INET6_ADDRSTRLEN] = {0};
     std::map<long, struct addrinfo> client_storage;
 
     if (ac != 3) {
@@ -172,7 +171,29 @@ int main(int ac, char **av)
 
                             if (i == endpoint) {
                                 std::cout << "connections to accept\n";
-                            } else {
+                            } else 
+                            {
+                                switch (iterator->ai_family)
+                                {
+                                    case AF_INET:
+                                    {
+                                        // use of reinterpret_cast preferred to C style cast
+                                        sockaddr_in *sin = reinterpret_cast<sockaddr_in*>(iterator);
+                                        inet_ntop(AF_INET, &sin->sin_addr, translated_ip, INET6_ADDRSTRLEN);
+                                        break;
+                                    }
+                                    case AF_INET6:
+                                    {
+                                        sockaddr_in6 *sin = reinterpret_cast<sockaddr_in6*>(iterator);
+                                        // inet_ntoa should be considered deprecated
+                                        inet_ntop(AF_INET6, &sin->sin6_addr, translated_ip, INET6_ADDRSTRLEN);
+                                        break;
+                                    }
+                                    default:
+                                        abort();
+                                }
+                                
+                                
                                 // for (;;) {
                                     // send(i, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
                                 // }
