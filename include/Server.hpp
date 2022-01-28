@@ -206,6 +206,29 @@ namespace irc
         FD_ZERO(&_client_sockets);
     }
 
+    bool
+    Server::users_recquire(int fd)
+    {
+            int i; 
+            std::string ret; 
+            std::string tmp(raw_input);
+            size_t separate = tmp.find_first_of('@'); 
+            i = separate - 1;
+            while(tmp.compare("<"))
+                i--;
+            i++;
+            tmp.copy((char*)ret.c_str(), (separate -1) - i, i); 
+            
+
+
+
+
+
+
+
+    }
+
+
     void
     Server::set_password( const std::string new_password )
     {
