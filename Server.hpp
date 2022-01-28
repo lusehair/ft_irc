@@ -12,9 +12,16 @@
 # include <iostream>
 # include <unistd.h>
 
-// struct addrinfo and manipulation of it
-# include <sys/types.h>
+// INET6_ADDRSTRLEN
+#include <netinet/in.h>
+
+// accept, bind, setsockopt, recv, send, socket, socket option macro
 # include <sys/socket.h>
+
+// fcntl
+#include <fcntl.h>
+
+// gai_strerror, addrinfo, AI_NUMERICHOST
 # include <netdb.h>
 
 // time_t (used to print timed logs)
@@ -31,27 +38,6 @@
 
 # define BUFFER_SIZE 512
 # define MAX_PENDING_CONNECTIONS 10
-
-   
-#include <string>
-#include <map>
-#include <utility>
-#include <cstring>
-#include <iostream>
-
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-
-#include <unistd.h>
-
-#include <poll.h>
-
-#include <fcntl.h>
-
-#include <sys/time.h>
 
 namespace irc
 {
@@ -71,9 +57,10 @@ namespace irc
             char                    _main_buffer[BUFFER_SIZE];
             char                    _ip_buffer[INET6_ADDRSTRLEN];
 
-            // Do not allow external use of default ctor and copy ctor
+            // Do not allow external use of default ctor, copy ctor and assignation
             Server();
             Server(const Server & other);
+            Server & operator = (const Server & other);
 
             struct CtorException : std::exception
             {
@@ -258,6 +245,7 @@ namespace irc
             }
             else if (number_of_ready_sockets == 0)
             {
+                // log timeout
                 std::cout << "Nothing received in last " << _time_before_timeout.tv_sec << " seconds\n";
                 break ;
             }
