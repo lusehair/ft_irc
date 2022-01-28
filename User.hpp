@@ -18,7 +18,10 @@
 # ifndef USER_HPP
 # define USER_HPP 
 
-#include <string> // For string stoage (username)
+#include <string> // For string storage (username)
+#include <list> // For channel container 
+#include <irc.hpp> 
+
 
 
 
@@ -28,42 +31,58 @@ class User
 {
     private:  
     
-        User() : _username("Default" + rand()), _nickname("LocalDefault"), _isOperator(false)
+        // Use for test and debuging 
+        User::User() : _username("Default" + rand()), _nickname("LocalDefault"), _isOperator(false)
         {
             
         }
 
-        User() : _isOperator(false)
-        {
 
+        User::User(char *input) : _isOperator(false), _username(set_nick(input), _nickname(set_username(input)))
+        {
         }
 
-        std::string setValue(char *raw_input)
+        // Parser for set username and nickname from the first client request 
+        std::string User::set_nick(char *raw_input)
         {
-            std::string tmp = str(raw_input); 
+            int i; 
+            std::string ret; 
+            std::string tmp(raw_input);
+            size_t separate = tmp.find_first_of('@'); 
+            i = separate - 1;
+            while(tmp.compare("<"))
+                i--;
+            i++;
+            tmp.copy((char*)ret.c_str(), (separate -1) - i, i); 
+            return (ret); 
         }
-    
-        std::string _username; 
-        std::string _nickname;
-        bool _isOperator;  
-        const std::string _connect_format; 
+
+        std::string User::set_username(char * raw_input)
+        {
+            int i; 
+            std::string ret; 
+            std::string tmp(raw_input); 
+            size_t separate = tmp.find_first_of('@'); 
+            i = separate + 1; 
+            while(tmp.compare(">"))
+                i++; 
+            i--; 
+            tmp.copy((char*)ret.c_str(), (i - 1) - separate, i);
+            return (ret); 
+        }
+
+
+        //                 
+        bool _isOperator;
+        std::list<const irc::channel* own_chan> 
 
 
 
     public: 
 
-    
-    
-    
-    const std::string getUsername(void) const
-    {
-        return (_username);
-    }
-
-    const std::string getNickname(void) const
-    {
-        return (_nickname);
-    }
+    std::string _username; 
+    std::string _nickname;
+    int 
 
 
 }
