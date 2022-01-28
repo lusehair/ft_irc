@@ -134,6 +134,10 @@ irc::Server::~Server()
 {
     for_each(_opened_sockets.begin(), _opened_sockets.end(), log_and_close_socket);
     FD_ZERO(&_client_sockets);
+    std::cout << "The fd_set of client sockets has been emptied\n";
+    _connected_users.clear();
+    std::cout << "The map of users has been emptied\n";
+    _opened_sockets.clear();
     std::cout << "The set of opened sockets has been emptied\n";
 }
 
