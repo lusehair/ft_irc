@@ -45,6 +45,8 @@
 // Also named backLog, use in listen to limit the number of simultaneous client connections
 # define MAX_PENDING_CONNECTIONS 10
 
+#include "User.hpp"
+
 namespace irc
 {
 
@@ -56,7 +58,8 @@ namespace irc
             int                             _listening_socket;
             fd_set                          _client_sockets; // for select parameters
             fd_set                          _ready_sockets; // for select return
-            std::map<std::string, User>     _connected_users; // int == fd ; addrinfo == User *
+            std::map<std::string, User>     _connected_users;
+            std::map<int, std::string>      _unnamed_users;
             std::set<void *>                _running_channels; // void * == Channel; int == Modes
             std::set<int>                   _opened_sockets; // set of all opened sockets to easily have the maxfd
             time_t                          _raw_start_time; // used for logs
@@ -79,13 +82,18 @@ namespace irc
 
         public:
             // Only ctor actually used
-            Server( char * port_number );
+            Server( char * port_number ); // TODO: add password as a second parameter
 
             ~Server();
 
             void set_password( const std::string new_password );
 
+            bool user_acquired(const int fd);
             void loop( void );
+
+        private:
+            typedef void (* command_function)(const std::string);
+            static std::map<const std::string, command_function>    _commands;
 
     };
 
