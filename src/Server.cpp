@@ -192,13 +192,13 @@ irc::Server::user_acquired(int fd)
 void
 irc::Server::loop( void )
 {
-    int                                         number_of_ready_sockets;
-    struct timeval                              local_time_before_timeout;
-    int                                         max_fd;
-    std::map<std::string, irc::User>::iterator  user_iterator;
-    std::map<std::string, irc::User>::iterator  target_user_iterator;
-    int                                         new_client_socket;
-    struct addrinfo                             new_client_address;
+    int                                             number_of_ready_sockets;
+    struct timeval                                  local_time_before_timeout;
+    int                                             max_fd;
+    std::map<std::string, irc::User *>::iterator    user_iterator;
+    std::map<std::string, irc::User *>::iterator    target_user_iterator;
+    int                                             new_client_socket;
+    struct addrinfo                                 new_client_address;
 
     for (;;)
     {
@@ -258,7 +258,7 @@ FD_SET(new_client_socket, &_client_sockets);
 // Notify other users of the newcomer
 for (user_iterator = _connected_users.begin(); user_iterator != _connected_users.end(); ++user_iterator)
 {
-    send(user_iterator->second._own_socket, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
+    send(user_iterator->second->_own_socket, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
 }
                     }
                 }
@@ -273,14 +273,14 @@ for (user_iterator = _connected_users.begin(); user_iterator != _connected_users
             for (user_iterator = _connected_users.begin(); user_iterator != _connected_users.end() && number_of_ready_sockets > 0; ++user_iterator)
             {
                 // If the current socket is in the set of ready sockets
-                if (FD_ISSET(user_iterator->second._own_socket, &_ready_sockets))
+                if (FD_ISSET(user_iterator->second->_own_socket, &_ready_sockets))
                 {
                     // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
 
                     // Receive its data
                     memset(_main_buffer, 0, BUFFER_SIZE);
-                    recv(user_iterator->second._own_socket, _main_buffer, BUFFER_SIZE, 0);
+                    recv(user_iterator->second->_own_socket, _main_buffer, BUFFER_SIZE, 0);
 
 
 
@@ -290,7 +290,7 @@ for (user_iterator = _connected_users.begin(); user_iterator != _connected_users
 // Send it raw to all users
 for (target_user_iterator = _connected_users.begin(); target_user_iterator != _connected_users.end(); ++target_user_iterator)
 {
-    send(target_user_iterator->second._own_socket, _main_buffer, strlen(_main_buffer), MSG_DONTWAIT);
+    send(target_user_iterator->second->_own_socket, _main_buffer, strlen(_main_buffer), MSG_DONTWAIT);
 }
 
 
@@ -301,3 +301,5 @@ for (target_user_iterator = _connected_users.begin(); target_user_iterator != _c
         }
     }
 }
+
+
