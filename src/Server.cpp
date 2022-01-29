@@ -150,13 +150,13 @@ irc::Server::set_password( const std::string new_password )
 void
 irc::Server::loop( void )
 {
-    int                                     number_of_ready_sockets;
-    struct timeval                          local_time_before_timeout;
-    int                                     max_fd;
-    std::map<std::string, User>::iterator   user_iterator;
-    std::map<std::string, User>::iterator   target_user_iterator;
-    int                                     new_client_socket;
-    struct addrinfo                         new_client_address;
+    int                                         number_of_ready_sockets;
+    struct timeval                              local_time_before_timeout;
+    int                                         max_fd;
+    std::map<std::string, irc::User>::iterator  user_iterator;
+    std::map<std::string, irc::User>::iterator  target_user_iterator;
+    int                                         new_client_socket;
+    struct addrinfo                             new_client_address;
 
     for (;;)
     {
@@ -248,5 +248,47 @@ irc::Server::loop( void )
                 }
             }
         }
+    }
+}
+
+bool
+irc::Server::users_acquired(int fd)
+{
+    memset(_main_buffer, 0, BUFFER_SIZE);
+    recv(fd, _main_buffer, BUFFER_SIZE, 0);
+    int i; 
+    std::string nick; 
+    std::string tmp(_main_buffer); 
+    size_t separate = tmp.find_first_of('@'); 
+    i = separate - 1;
+    while(tmp.compare("<"))
+        i--;
+    i++;
+    tmp.copy((char*)nick.c_str(), (separate -1) - i, i); 
+    std::map<std::string, User>::iterator it; 
+
+    it = _connected_users.find(nick); 
+    if (it != _connected_users.end())
+    {
+        close(fd); 
+        // Method for closing fd on all fd set 
+        _connected_users.erase(nick); 
+        return false; 
+    }
+    // else if conditon for pass checking 
+
+    else 
+    {
+
+        std::string username; 
+        i = separate + 1; 
+        while(tmp.compare(">"))
+            i++;
+        i--; 
+        tmp.copy((char*)username.c_str(), (i - 1) - separate, i);
+        FD_SET(new_client_socket, &_client_sockets);
+        _connected_users.insert(std::make_pair(nick, User(nick, username, fd)));
+        _opened_sockets.insert(fd);
+        return true; 
     }
 }
