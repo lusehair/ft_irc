@@ -33,17 +33,20 @@ class log
 
     const std::string IRC_START = "IRC SERVER START\n"; 
     const std::string ERRGETADDRINFO = "cannot get a listen port\n";
-    const std::string LISTPOTENTIALADDR = "find these adresses : \n"; 
-    const std::string TRYBIDINGSOCKET = "Try to bind : "; 
-    const std::string INVALIDSOCKET = "cannot bind : invalid socket : "; 
-    const std::string OPTSETFAIL = "cannot set option for the socket : "; 
-    const std::string BINDFAIL = "cannot bind on: "; 
-    const std::string BINDSUCCESS = " bind with succesful\n"; 
-    const std::string LISTENFAILED = "cannot listen the socket :"; 
-    const std::string NOBIND = "cannot bind and connect: "; 
-    const std::string CLOSESOCKET = " has been close\n"; 
-    const std::string SELECTERR = "cannot get the request from: "; 
-    const std::string TIMEOUT = ""
+    const std::string LISTPOTENTIALADDR = "find these adresses : \n"; //after 
+    const std::string TRYBIDINGSOCKET = "Try to bind : "; // after
+    const std::string INVALIDSOCKET = "cannot bind : invalid socket : "; // after 
+    const std::string OPTSETFAIL = "cannot set option for the socket : ";  //after 
+    const std::string BINDFAIL = "cannot bind on: ";  //after
+    const std::string BINDSUCCESS = " bind with succesful\n"; //before 
+    const std::string LISTENFAILED = "cannot listen the socket :";  //after 
+    const std::string NOBIND = "cannot bind and connect: "; //after 
+    const std::string CLOSESOCKET = " has been close\n"; //before 
+    const std::string SELECTERR = "cannot get the request from: "; //after  
+    const std::string TIMEOUT = " is connected to se server\n"; //before 
+    const std::string CONNECTFAILED = " cannot being conencted to the server\n"; // before  
+    
+
 
 
 
