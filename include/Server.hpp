@@ -58,7 +58,7 @@ namespace irc
             int                             _listening_socket;
             fd_set                          _client_sockets; // for select parameters
             fd_set                          _ready_sockets; // for select return
-            std::map<std::string, User>     _connected_users;
+            std::map<std::string, User *>   _connected_users;
             std::map<int, std::string>      _unnamed_users;
             std::set<void *>                _running_channels; // void * == Channel; int == Modes
             std::set<int>                   _opened_sockets; // set of all opened sockets to easily have the maxfd
