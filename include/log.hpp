@@ -47,16 +47,7 @@ class log
     const std::string CONNECTFAILED = " cannot being conencted to the server\n"; // before  
     
 
-
-
-
 }
-
-
-
-
-
-
 
 
 # endif 
