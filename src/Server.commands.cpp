@@ -99,7 +99,15 @@ void irc::Server::cmd_user(void *input_fd)
     }
 }
 
-
+/**
+ * @brief Hash Password 
+ * 
+ * This method take a string as parameter and transform inch character as int value transform by arthimetical operations.
+ * the method return an array of int with encrypted password. 
+ * 
+ * @param input_pass (char*) 
+ * @return int* 
+ */
 int*    irc::Server::pass_hash(char *input_pass)
 {
     int len = strlen(input_pass); 
@@ -111,7 +119,18 @@ int*    irc::Server::pass_hash(char *input_pass)
     return (ret); 
 }
 
-
+/**
+ * @brief Command PASS from IRC Protocol 
+ * 
+ * We have 3 cases : 
+ * 1. If the users is already register (in unnamed users map, find by fd)
+ * 2. If we have no argument (no argument after "PASS" command)
+ * 3. If the pass given by the user doesn't match with the server password.
+ * 
+ * @param input_fd (int)
+ * @sa RFC 2812 (3.1.1)
+ * 
+ */
 void irc::Server::cmd_pass(void *input_fd)
 {
     const int fd = *(reinterpret_cast<int*>(input_fd));
