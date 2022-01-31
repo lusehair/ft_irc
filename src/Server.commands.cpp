@@ -56,41 +56,95 @@ void irc::Server::cmd_nick(void *sender)
  * @brief command USER from IRC Protocl
  * 
  * We have 2 cases : 
- * 1. If the USER command doesn't have username on his request 
- * 2. User is already register 
+ * 1. If the USER command doesn't have username on his request  (461)
+ * 2. User is already register (462)
  * 
  * @param input_fd (int)
  * @sa RFC 2812 (3.1.3)
  * 
  */
-void irc::Sevrer::cmd_user(void *input_fd)
+void irc::Server::cmd_user(void *input_fd)
 {
-    const int fd = *(reinterpret_cast<int*>(sender)); 
+    const int fd = *(reinterpret_cast<int*>(input_fd)); 
     std::string username; 
     std::string tmp(_main_buffer);
     std::size_t start = tmp.find("USER") + 5; 
+    std::size_t end = tmp.find(' ', start); 
     std::size_t nb_of_space = std::count(tmp.begin(), tmp.end(), ' ');
+
     if(nb_of_space == 4)
     {
-        send(fd, 461, sizeof(int), MSG_DONTWAIT)
+        send(fd, 461, sizeof(int), MSG_DONTWAIT);
         return ; 
     }
-    tmp.copy((char*)user.c_str(), start , end - start);
+
+    tmp.copy((char*)username.c_str(), start , end - start);
     std::map<int, std::string>::iterator unnamed_it; 
 
-
-    if(connected_it != _unnamed_users.end())
+    if(unnamed_it != _unnamed_users.end())
     {
-        std::map<int, std::string>::iterator check_even_connected_it = _connected_users.find(connected_it->second); 
+        std::map<int, std::string>::iterator check_even_connected_it = _connected_users.find(username)->first; 
+        
         if(check_even_conneceted_it != _connected_users.end())
         {
-            send(fd, 462, sizeof(int), MSG_DONTWAIT)
+            send(fd, 462, sizeof(int), MSG_DONTWAIT); 
             return ;
         }
+        
         else if(connected_it->second.size() != 0)
         {
             _connected_users.insert(User(_connected_it->second, username, fd));
-            _unnamed_users.erase(fd);
+            _unnamed_users.erase(fd); 
         }
     }
 }
+
+
+int*    irc::Server::pass_hash(char *input_pass)
+{
+    int len = strlen(input_pass); 
+    int* ret = new int[len]; 
+    for (int i = 0; i < len; i++)
+    {
+        ret[i] = (input_pass[i] * len) - (input_pass[i] - i); 
+    }
+    return (ret); 
+}
+
+
+void irc::Server::cmd_pass(void *input_fd)
+{
+    const int fd = *(reinterpret_cast<int*>(input_fd));
+    std::map<int, std::string>::iterator unnamed_it = _unnamed_users.find(fd)->first; 
+    
+    if(unnamed_it != _unnamed_users.end())
+    {
+        send(fd, 462, sizeof(int), MSG_DONTWAIT); 
+        return ;
+    }
+
+    std::string input_pass(_main_buffer);
+    std::string raw_pass; 
+    
+    if(input_pass.size() < 6)
+    {
+        send(fd, 461, sizeof(int), MSG_DONTWAIT); 
+        return ;
+    }
+
+    input_pass.copy((char*)raw_pass.c_str(), input_pass.size() - 6 , 6);
+    int *hash_pass = pass_hash((char*)raw_pass.c_str()); 
+    
+    for(int i = 0; i < strlen(raw_pass.c_str()); i++)
+    {
+        if(hash_pass[i] != _server_pass[i])
+        {
+            delete(hash_pass);
+            return;
+        }
+    }
+
+    _unnamed_users.insert(make_pair(fd, "")); 
+    delete(hash_pass); 
+}
+
