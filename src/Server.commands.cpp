@@ -19,14 +19,14 @@ irc::Server::init_commands_map( void )
  * 2. If the User have the same nickname to another, kick the two user 
  * 3. If it's a new user, we put the nickname in unnamed_users map. 
  * 4. If the nickname is not in the block_list
- * the void* is cast into a fd (int)
+ * the void* is cast into a target_socket (int)
  * 
  * @param void* input_socket 
  *@sa RFC 2812 (3.1.2)
  */
 void irc::Server::cmd_nick(void *input_socket)
 {
-    const int fd = *(reinterpret_cast<int*>(input_socket)); 
+    const int target_socket = *(reinterpret_cast<int*>(sender)); 
     
     std::string nick; 
     std::string tmp(_main_buffer);
@@ -40,7 +40,7 @@ void irc::Server::cmd_nick(void *input_socket)
 
     if (connected_it != _connected_users.end())
     {
-        if(connected_it->second._own_socket == fd) 
+        if(connected_it->second._own_socket == target_socket) 
         {
             User* tmp = connected_it->second; 
             _connected_users.erase(connected_it->second._nickname); 
@@ -53,7 +53,7 @@ void irc::Server::cmd_nick(void *input_socket)
             // SENT ERR MSG IF qui dit que le nickname est deja pris
         }
     }
-    else if ((unnamed_it = _unnamed_users.find(fd)) == _unnamed_users.end())
+    else if ((unnamed_it = _unnamed_users.find(target_socket)) == _unnamed_users.end())
     {
         unnamed_it->second = nick; 
     }
@@ -73,7 +73,7 @@ void irc::Server::cmd_nick(void *input_socket)
  */
 void irc::Server::cmd_user(void *input_fd)
 {
-    const int fd = *(reinterpret_cast<int*>(input_fd)); 
+    const int target_socket = *(reinterpret_cast<int*>(input_fd)); 
     std::string username; 
     std::string tmp(_main_buffer);
     std::size_t start = tmp.find(USER) + 5; 
@@ -82,7 +82,7 @@ void irc::Server::cmd_user(void *input_fd)
 
     if(nb_of_space == 4)
     {
-        send(fd, 461, sizeof(int), MSG_DONTWAIT);
+        send(target_socket, 461, sizeof(int), MSG_DONTWAIT);
         return ; 
     }
 
@@ -95,14 +95,14 @@ void irc::Server::cmd_user(void *input_fd)
         
         if(check_even_conneceted_it != _connected_users.end())
         {
-            send(fd, 462, sizeof(int), MSG_DONTWAIT); 
+            send(target_socket, 462, sizeof(int), MSG_DONTWAIT); 
             return ;
         }
         
         else if(connected_it->second.size() != 0)
         {
-            _connected_users.insert(User(_connected_it->second, username, fd));
-            _unnamed_users.erase(fd);
+            _connected_users.insert(User(_connected_it->second, username, target_socket));
+            _unnamed_users.erase(target_socket);
             //need to set a private function for sending message (Header etc ...)
         }
     }
@@ -132,7 +132,7 @@ int*    irc::Server::pass_hash(char *input_pass)
  * @brief Command PASS from IRC Protocol 
  * 
  * We have 3 cases : 
- * 1. If the users is already register (in unnamed users map, find by fd)
+ * 1. If the users is already register (in unnamed users map, find by target_socket)
  * 2. If we have no argument (no argument after "PASS" command)
  * 3. If the pass given by the user doesn't match with the server password.
  * 
@@ -142,12 +142,12 @@ int*    irc::Server::pass_hash(char *input_pass)
  */
 void irc::Server::cmd_pass(void *input_fd)
 {
-    const int fd = *(reinterpret_cast<int*>(input_fd));
-    std::map<int, std::string>::iterator unnamed_it = _unnamed_users.find(fd)->first; 
+    const int target_socket = *(reinterpret_cast<int*>(input_fd));
+    std::map<int, std::string>::iterator unnamed_it = _unnamed_users.find(target_socket)->first; 
 
     if(unnamed_it != _unnamed_users.end())
     {
-        send(fd, 462, sizeof(int), MSG_DONTWAIT); 
+        send(target_socket, 462, sizeof(int), MSG_DONTWAIT); 
         return ;
     }
 
@@ -156,7 +156,7 @@ void irc::Server::cmd_pass(void *input_fd)
     
     if(input_pass.size() < 6)
     {
-        send(fd, 461, sizeof(int), MSG_DONTWAIT); 
+        send(target_socket, 461, sizeof(int), MSG_DONTWAIT); 
         return ;
     }
 
@@ -172,6 +172,24 @@ void irc::Server::cmd_pass(void *input_fd)
         }
     }
 
-    _unnamed_users.insert(make_pair(fd, "")); 
+    _unnamed_users.insert(make_pair(target_socket, "")); 
     delete(hash_pass); 
 }
+
+
+void irc::Server::select_cmd(int input_socket)
+{
+     
+    std::string raw_command(_main_buffer); 
+    std::size_t end = raw_command.find(" "); 
+    std::string ret;
+    raw_command.copy((char*)ret.c_str(), end); 
+
+    std::map<const std::string, command_function>::iterator it = _commands.find(ret)->first; 
+    if(it == _commands.end())
+        return; 
+    else 
+        (*(it->second))(target_socket);
+
+}
+
