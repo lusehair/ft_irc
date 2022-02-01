@@ -50,6 +50,9 @@
 # define USER "USER"
 # define PRIVMSG "PRIVMSG"
 
+# define ERR_NEEDMOREPARAMS "461"
+# define ERR_ALREADYREGISTRED "462"
+
 #include "User.hpp"
 
 namespace irc
@@ -116,9 +119,13 @@ namespace irc
 
             void init_commands_map( void );
 
+            int * pass_hash( const char * input_pass );
+
             void cmd_pass( void * input_socket );
             void cmd_nick( void * input_socket );
             void cmd_user( void * input_socket );
+
+            void cmd_caller( int input_socket );
 
     };
 

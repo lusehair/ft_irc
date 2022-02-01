@@ -285,16 +285,18 @@ irc::Server::loop( void )
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     recv(user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
 
+// TODO: recv errors handling
+                    std::cout << user_iterator->second->_own_socket << " raw input: ";
+                    std::cout << _main_buffer << "\n";
 
+                    cmd_caller(user_iterator->second->_own_socket);
 
-
-
-// TODO: parse the command and dont just send it to everyone
-// Send it raw to all users
-for (target_user_iterator = _connected_users.begin(); target_user_iterator != _connected_users.end(); ++target_user_iterator)
-{
-    send(target_user_iterator->second->_own_socket, _main_buffer, strlen(_main_buffer), MSG_DONTWAIT);
-}
+// // TODO: parse the command and dont just send it to everyone
+// // Send it raw to all users
+// for (target_user_iterator = _connected_users.begin(); target_user_iterator != _connected_users.end(); ++target_user_iterator)
+// {
+//     send(target_user_iterator->second->_own_socket, _main_buffer, strlen(_main_buffer), MSG_DONTWAIT);
+// }
 
 
 

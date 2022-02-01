@@ -6,8 +6,87 @@ irc::Server::init_commands_map( void )
     _commands.insert(std::make_pair(PASS, cmd_pass));
     _commands.insert(std::make_pair(NICK, cmd_nick));
     _commands.insert(std::make_pair(USER, cmd_user));
+}
 
-    (*(it->second))(param)
+/**
+ * @brief Hash Password 
+ * 
+ * This method take a string as parameter and transform inch character as int value transform by arthimetical operations.
+ * the method return an array of int with encrypted password. 
+ * 
+ * @param input_pass (char*) 
+ * @return int* 
+ */
+int *    irc::Server::pass_hash(const char * input_pass)
+{
+    int len = strlen(input_pass); 
+    int * ret = new int[len];
+    for (int i = 0; i < len; i++)
+    {
+        ret[i] = (input_pass[i] * len) - (input_pass[i] - i); 
+    }
+    return (ret); 
+}
+
+/**
+ * @brief Command PASS from IRC Protocol 
+ * 
+ * We have 3 cases : 
+ * 1. If the users is already register (in unnamed users map, find by target_socket)
+ * 2. If we have no argument (no argument after "PASS" command)
+ * 3. If the pass given by the user doesn't match with the server password.
+ * 
+ * @param input_fd (int)
+ * @sa RFC 2812 (3.1.1)
+ * 
+ */
+void irc::Server::cmd_pass(void * input_fd)
+{
+    const int target_socket = *(reinterpret_cast<int *>(input_fd));
+    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket); 
+
+    // loop in all users to see if the socket is already registered
+    if(unnamed_it != _unnamed_users.end())
+    {
+        send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
+        return ;
+    }
+
+    std::string input_pass(_main_buffer);
+    // std::string raw_pass; 
+
+    if(input_pass.size() < strlen(PASS) + 2)
+    {
+        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT); 
+        return ;
+    }
+
+    // input_pass.copy((char*)raw_pass.c_str(), input_pass.size() - 6 , 6);
+    // int *hash_pass = pass_hash((char*)raw_pass.c_str()); 
+    // int *hash_pass = pass_hash(raw_pass.substr(strlen(PASS) + 1).c_str());
+    
+    // for(int i = 0; i < strlen(raw_pass.c_str()); i++)
+    // {
+    //     if(hash_pass[i] != _password[i])
+    //     {
+    //         delete(hash_pass);
+    //         return;
+    //     }
+    // }
+
+    if (input_pass.substr(strlen(PASS) + 1).compare(PASS) == 0)
+    {
+        _unnamed_users[target_socket].pass_check = true;
+    }
+    else
+    {
+        _unnamed_users.erase(target_socket);
+        FD_CLR(target_socket, &_client_sockets);
+        close(target_socket);
+    }
+    
+    // _unnamed_users.insert(make_pair(target_socket, "")); 
+    // delete(hash_pass); 
 }
 
 /**
@@ -26,16 +105,16 @@ irc::Server::init_commands_map( void )
  */
 void irc::Server::cmd_nick(void *input_socket)
 {
-    const int target_socket = *(reinterpret_cast<int*>(sender)); 
+    const int target_socket = *(reinterpret_cast<int*>(input_socket)); 
     
-    std::string nick; 
-    std::string tmp(_main_buffer);
-    std::size_t found = tmp.find(NICK) + 4; 
+    std::string nick;
+    std::string input_nick(_main_buffer);
+    // std::size_t found = tmp.find(NICK) + 4; 
 
-    tmp.copy((char*)nick.c_str(), tmp.size() - found , found);
-    std::map<std::string, irc::User>::iterator connected_it = _connected_users.find(nick); 
-    std::map<int, std::string>::iterator unnamed_it;
-    
+    // tmp.copy((char*)nick.c_str(), tmp.size() - found , found);
+    std::map<std::string, irc::User *>::iterator connected_it = _connected_users.find(input_nick.substr(strlen(NICK) + 1)); 
+    std::map<int, pending_socket>::iterator unnamed_it;
+// _____________________________________________________________________________________________________________________________
     // need to check if nickname is ban 
 
     if (connected_it != _connected_users.end())
@@ -108,88 +187,22 @@ void irc::Server::cmd_user(void *input_fd)
     }
 }
 
-/**
- * @brief Hash Password 
- * 
- * This method take a string as parameter and transform inch character as int value transform by arthimetical operations.
- * the method return an array of int with encrypted password. 
- * 
- * @param input_pass (char*) 
- * @return int* 
- */
-int*    irc::Server::pass_hash(char *input_pass)
+void irc::Server::cmd_caller(int input_socket)
 {
-    int len = strlen(input_pass); 
-    int* ret = new int[len]; 
-    for (int i = 0; i < len; i++)
-    {
-        ret[i] = (input_pass[i] * len) - (input_pass[i] - i); 
-    }
-    return (ret); 
-}
-
-/**
- * @brief Command PASS from IRC Protocol 
- * 
- * We have 3 cases : 
- * 1. If the users is already register (in unnamed users map, find by target_socket)
- * 2. If we have no argument (no argument after "PASS" command)
- * 3. If the pass given by the user doesn't match with the server password.
- * 
- * @param input_fd (int)
- * @sa RFC 2812 (3.1.1)
- * 
- */
-void irc::Server::cmd_pass(void *input_fd)
-{
-    const int target_socket = *(reinterpret_cast<int*>(input_fd));
-    std::map<int, std::string>::iterator unnamed_it = _unnamed_users.find(target_socket)->first; 
-
-    if(unnamed_it != _unnamed_users.end())
-    {
-        send(target_socket, 462, sizeof(int), MSG_DONTWAIT); 
-        return ;
-    }
-
-    std::string input_pass(_main_buffer);
-    std::string raw_pass; 
-    
-    if(input_pass.size() < 6)
-    {
-        send(target_socket, 461, sizeof(int), MSG_DONTWAIT); 
-        return ;
-    }
-
-    input_pass.copy((char*)raw_pass.c_str(), input_pass.size() - 6 , 6);
-    int *hash_pass = pass_hash((char*)raw_pass.c_str()); 
-    
-    for(int i = 0; i < strlen(raw_pass.c_str()); i++)
-    {
-        if(hash_pass[i] != _server_pass[i])
-        {
-            delete(hash_pass);
-            return;
-        }
-    }
-
-    _unnamed_users.insert(make_pair(target_socket, "")); 
-    delete(hash_pass); 
-}
-
-
-void irc::Server::select_cmd(int input_socket)
-{
-     
     std::string raw_command(_main_buffer); 
-    std::size_t end = raw_command.find(" "); 
-    std::string ret;
-    raw_command.copy((char*)ret.c_str(), end); 
+    size_t end = raw_command.find(" "); 
+    // std::string ret;
+    // raw_command.copy(ret.c_str(), end); 
 
-    std::map<const std::string, command_function>::iterator it = _commands.find(ret)->first; 
+    std::map<const std::string, command_function>::iterator it = _commands.find(raw_command.substr(0, end)); 
     if(it == _commands.end())
+    {
+    // handle non-existing commands
         return; 
+    }
     else 
-        (*(it->second))(target_socket);
-
+    {
+        (*(it->second))(&input_socket);
+    }
 }
 
