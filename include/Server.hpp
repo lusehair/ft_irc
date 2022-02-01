@@ -41,9 +41,14 @@
 # include <algorithm>
 
 // Size of the receiving buffer being 512 as the max size of a packet defined in rfc 2812
-# define BUFFER_SIZE 512
+# define MAX_REQUEST_LEN 512
 // Also named backLog, use in listen to limit the number of simultaneous client connections
 # define MAX_PENDING_CONNECTIONS 10
+
+# define PASS "PASS"
+# define NICK "NICK"
+# define USER "USER"
+# define PRIVMSG "PRIVMSG"
 
 #include "User.hpp"
 
@@ -58,13 +63,14 @@ namespace irc
             int                             _listening_socket;
             fd_set                          _client_sockets; // for select parameters
             fd_set                          _ready_sockets; // for select return
+            struct                          pending_socket;
+            std::map<int, pending_socket>   _unnamed_users;
             std::map<std::string, User *>   _connected_users;
-            std::map<int, std::string>      _unnamed_users;
             std::set<void *>                _running_channels; // void * == Channel; int == Modes
             std::set<int>                   _opened_sockets; // set of all opened sockets to easily have the maxfd
             time_t                          _raw_start_time; // used for logs
             struct timeval                  _time_before_timeout; // select timeout
-            char                            _main_buffer[BUFFER_SIZE];
+            char                            _main_buffer[MAX_REQUEST_LEN + 1];
             char                            _ip_buffer[INET6_ADDRSTRLEN];
 
             // Do not allow external use of default ctor, copy ctor and assignation
@@ -80,6 +86,19 @@ namespace irc
                 }
             };
 
+            struct pending_socket
+            {
+                std::string     nick_name;
+                bool            pass_check;
+
+                pending_socket()
+                    : nick_name(std::string())
+                    , pass_check(false)
+                {
+                }
+            };
+            
+
         public:
             // Only ctor actually used
             Server( char * port_number ); // TODO: add password as a second parameter
@@ -92,8 +111,14 @@ namespace irc
             void loop( void );
 
         private:
-            typedef void (* command_function)(const std::string);
+            typedef void (* command_function)( void * );
             static std::map<const std::string, command_function>    _commands;
+
+            void init_commands_map( void );
+
+            void cmd_pass( void * input_socket );
+            void cmd_nick( void * input_socket );
+            void cmd_user( void * input_socket );
 
     };
 

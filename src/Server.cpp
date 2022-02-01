@@ -12,7 +12,7 @@ irc::Server::Server( char * port_number )
         _time_before_timeout.tv_sec = 30;
         _time_before_timeout.tv_usec = 0;
         FD_ZERO(&_client_sockets);
-        memset(_main_buffer, 0, BUFFER_SIZE);
+        memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
         memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
         time(&_raw_start_time);
         // log ctor start
@@ -120,6 +120,8 @@ irc::Server::Server( char * port_number )
 
     FD_SET(_listening_socket, &_client_sockets);
     _opened_sockets.insert(_listening_socket);
+
+    init_commands_map();
 } // End of ctor, ready to loop
 
 static void
@@ -150,8 +152,8 @@ irc::Server::set_password( const std::string new_password )
 bool
 irc::Server::user_acquired(int fd)
 { (void)fd;
-    // memset(_main_buffer, 0, BUFFER_SIZE);
-    // recv(fd, _main_buffer, BUFFER_SIZE, 0);
+    // memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
+    // recv(fd, _main_buffer, MAX_REQUEST_LEN, 0);
     // int i; 
     // std::string nick; 
     // std::string tmp(_main_buffer); 
@@ -239,6 +241,7 @@ irc::Server::loop( void )
     // // Register the new user (in user_acquired function)
     // _connected_users.insert(std::make_pair(std::string("toto" + std::to_string(new_client_socket)), User("toto", "toto", new_client_socket)));
     FD_SET(new_client_socket, &_client_sockets);
+    _unnamed_users.insert(std::make_pair(new_client_socket, pending_socket()));
 
     // // Send a welcome message to the new client
     // send(new_client_socket, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
@@ -279,8 +282,8 @@ irc::Server::loop( void )
                     --number_of_ready_sockets;
 
                     // Receive its data
-                    memset(_main_buffer, 0, BUFFER_SIZE);
-                    recv(user_iterator->second->_own_socket, _main_buffer, BUFFER_SIZE, 0);
+                    memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
+                    recv(user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
 
 
 

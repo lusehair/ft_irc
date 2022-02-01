@@ -1,6 +1,14 @@
-
 #include "Server.hpp"
 
+void
+irc::Server::init_commands_map( void )
+{
+    _commands.insert(std::make_pair(PASS, cmd_pass));
+    _commands.insert(std::make_pair(NICK, cmd_nick));
+    _commands.insert(std::make_pair(USER, cmd_user));
+
+    (*(it->second))(param)
+}
 
 /**
  * @brief Command NICK from IRC Protocol 
@@ -13,16 +21,16 @@
  * 4. If the nickname is not in the block_list
  * the void* is cast into a fd (int)
  * 
- * @param void* sender 
+ * @param void* input_socket 
  *@sa RFC 2812 (3.1.2)
  */
-void irc::Server::cmd_nick(void *sender)
+void irc::Server::cmd_nick(void *input_socket)
 {
-    const int fd = *(reinterpret_cast<int*>(sender)); 
+    const int fd = *(reinterpret_cast<int*>(input_socket)); 
     
     std::string nick; 
     std::string tmp(_main_buffer);
-    std::size_t found = tmp.find("NICK") + 4; 
+    std::size_t found = tmp.find(NICK) + 4; 
 
     tmp.copy((char*)nick.c_str(), tmp.size() - found , found);
     std::map<std::string, irc::User>::iterator connected_it = _connected_users.find(nick); 
@@ -68,7 +76,7 @@ void irc::Server::cmd_user(void *input_fd)
     const int fd = *(reinterpret_cast<int*>(input_fd)); 
     std::string username; 
     std::string tmp(_main_buffer);
-    std::size_t start = tmp.find("USER") + 5; 
+    std::size_t start = tmp.find(USER) + 5; 
     std::size_t end = tmp.find(' ', start); 
     std::size_t nb_of_space = std::count(tmp.begin(), tmp.end(), ' ');
 
