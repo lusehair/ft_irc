@@ -233,34 +233,34 @@ irc::Server::loop( void )
                     fcntl(new_client_socket, F_SETFL, O_NONBLOCK);
 
 // TODO: verify if the password is correct and if the nick is unique. if so, let the programm continue. else, log wrong password or wrong nick (log in the function that checks for those)
-                    // If login info are correct and the user is registered in the database
-                    if (user_acquired(new_client_socket))
+// // If login info are correct and the user is registered in the database
+// if (user_acquired(new_client_socket))
+// {
+    // // Register the new user (in user_acquired function)
+    // _connected_users.insert(std::make_pair(std::string("toto" + std::to_string(new_client_socket)), User("toto", "toto", new_client_socket)));
+    FD_SET(new_client_socket, &_client_sockets);
+
+    // // Send a welcome message to the new client
+    // send(new_client_socket, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
+
+                    // log connection accepted
+                    std::cout << "Accepted conection from : ";
+                    memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
+                    if (getnameinfo(new_client_address.ai_addr, new_client_address.ai_addrlen, _ip_buffer, sizeof(_ip_buffer), NULL, 0, NI_NUMERICHOST) != 0)
                     {
-// Register the new user (in user_acquired function)
-_connected_users.insert(std::make_pair(std::string("toto" + std::to_string(new_client_socket)), User("toto", "toto", new_client_socket)));
-FD_SET(new_client_socket, &_client_sockets);
-
-                        // Send a welcome message to the new client
-                        send(new_client_socket, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
-
-                        // log connection accepted
-                        std::cout << "Accepted conection from : ";
-                        memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
-                        if (getnameinfo(new_client_address.ai_addr, new_client_address.ai_addrlen, _ip_buffer, sizeof(_ip_buffer), NULL, 0, NI_NUMERICHOST) != 0)
-                        {
-                            std::cout << "'could not translate the socket address'\n" ;
-                        }
-                        else
-                        {
-                            std::cout << _ip_buffer << '\n';
-                        }
-
-// Notify other users of the newcomer
-for (user_iterator = _connected_users.begin(); user_iterator != _connected_users.end(); ++user_iterator)
-{
-    send(user_iterator->second->_own_socket, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
-}
+                        std::cout << "'could not translate the socket address'\n" ;
                     }
+                    else
+                    {
+                        std::cout << _ip_buffer << '\n';
+                    }
+
+    // // Notify other users of the newcomer
+    // for (user_iterator = _connected_users.begin(); user_iterator != _connected_users.end(); ++user_iterator)
+    // {
+    //     send(user_iterator->second->_own_socket, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
+    // }
+// }
                 }
                 else
                 {
