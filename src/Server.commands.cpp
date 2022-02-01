@@ -94,7 +94,8 @@ void irc::Server::cmd_user(void *input_fd)
         else if(connected_it->second.size() != 0)
         {
             _connected_users.insert(User(_connected_it->second, username, fd));
-            _unnamed_users.erase(fd); 
+            _unnamed_users.erase(fd);
+            //need to set a private function for sending message (Header etc ...)
         }
     }
 }
@@ -135,7 +136,7 @@ void irc::Server::cmd_pass(void *input_fd)
 {
     const int fd = *(reinterpret_cast<int*>(input_fd));
     std::map<int, std::string>::iterator unnamed_it = _unnamed_users.find(fd)->first; 
-    
+
     if(unnamed_it != _unnamed_users.end())
     {
         send(fd, 462, sizeof(int), MSG_DONTWAIT); 
@@ -166,4 +167,3 @@ void irc::Server::cmd_pass(void *input_fd)
     _unnamed_users.insert(make_pair(fd, "")); 
     delete(hash_pass); 
 }
-
