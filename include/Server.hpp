@@ -91,6 +91,7 @@ namespace irc
                 }
             };
 
+            // user_name??
             struct pending_socket
             {
                 std::string     nick_name;
@@ -116,7 +117,7 @@ namespace irc
             void loop( void );
 
         private:
-            typedef void (* command_function)( void * );
+            typedef void (irc::Server::*command_function)( void * );
             static std::map<const std::string, command_function>    _commands;
 
             void init_commands_map( void );
@@ -129,7 +130,7 @@ namespace irc
 
             void cmd_caller( int input_socket );
 
-            void irc::Server::send_header(const User * input_user) const;
+            void send_header(const User * input_user) const;
 
     };
 

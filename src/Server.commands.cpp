@@ -3,9 +3,9 @@
 void
 irc::Server::init_commands_map( void )
 {
-    _commands.insert(std::make_pair(PASS, cmd_pass));
-    _commands.insert(std::make_pair(NICK, cmd_nick));
-    _commands.insert(std::make_pair(USER, cmd_user));
+    _commands.insert(std::make_pair(PASS, &irc::Server::cmd_pass));
+    _commands.insert(std::make_pair(NICK, &irc::Server::cmd_nick));
+    _commands.insert(std::make_pair(USER, &irc::Server::cmd_user));
 }
 
 /**
@@ -189,7 +189,7 @@ void irc::Server::cmd_user(void *input_socket)
         else if (unnamed_it->second.nick_name.size() != 0)
         {
             User * new_user = new User(unnamed_it->second.nick_name, username, unnamed_it->first); 
-            _connected_users.insert(std::make_pair(unnamed_it->first, new_user)); 
+            _connected_users.insert(std::make_pair(unnamed_it->second.nick_name, new_user)); 
             _unnamed_users.erase(target_socket); 
             send_header(new_user);
             std::cout << "User " << new_user->_nickname << " with " << new_user->_own_socket << " fd" << std::endl; 
@@ -207,21 +207,27 @@ void irc::Server::cmd_user(void *input_socket)
 
 void irc::Server::cmd_caller(int input_socket)
 {
-    std::string raw_command(_main_buffer); 
-    size_t end = raw_command.find(" "); 
+    std::string input_command(_main_buffer); 
+    std::string command_name = input_command.substr(0, input_command.find(" "));
     // std::string ret;
     // raw_command.copy(ret.c_str(), end); 
 
-
-    std::map<const std::string, command_function>::iterator it = _commands.find(raw_command.substr(0, end)); 
-    if(it == _commands.end())
+    if (input_command.size() - command_name.size() + 1 > 0)
     {
-    // handle non-existing commands
-        return; 
+        std::map<const std::string, command_function>::iterator it = _commands.find(command_name); 
+        if(it == _commands.end())
+        {
+        // handle non-existing commands
+            return; 
+        }
+        else 
+        {
+            (this->*(it->second))(&input_socket);
+        }
     }
-    else 
+    else
     {
-        (*(it->second))(&input_socket);
+        // ERR_NEEDMOREPARAMS
     }
 }
 
