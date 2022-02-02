@@ -53,7 +53,7 @@
 # define PRIVMSG "PRIVMSG"
 
 # define ERR_NEEDMOREPARAMS "461"
-# define ERR_ALREADYREGISTRED "462"
+# define ERR_ALREADYREGISTRED "462"     
 
 #include "User.hpp"
 
