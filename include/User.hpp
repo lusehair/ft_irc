@@ -1,73 +1,36 @@
-/**
- * @file User.hpp
- * @author your name (you@domain.com)
- * @brief 
- * @version 0.1
- * @date 2022-01-27
- * 
- * @copyright Copyright (c) 2022
- * 
- */
+#ifndef USER_HPP
+# define USER_HPP
 
-// 
+// For string storage (username)
+# include <string>
+# include <list> // For channel container
+// # include "Channel.hpp"
 
-
-
-
-
-# ifndef USER_HPP
-# define USER_HPP 
-
-#include <string> // For string storage (username)
-#include <list> // For channel container 
-#include <irc.hpp> 
-
-
-
-
-
-
-class User
+namespace irc
 {
-    private:  
-    
-        // Use for test and debuging 
-        User::User() : _username("Default" + rand()), _nickname("LocalDefault"), _isOperator(false)
-        {
-            
-        }
 
-        User::User(std::string nickname, std::string username, int fd) : _nickname(nick), _username(username), fd(fd)
-        {
-        }
+    class User
+    {
 
-        // Parser for set username and nickname from the first client request
+        public:
+            const int           _own_socket;
+            std::string         _nickname;
+            std::string         _username;
+            bool                _isOperator;
 
+        private:
+            std::list<void *>   _own_chan; // void * = const Channel *
 
-        //                 
-        bool _isOperator;
-        std::list<const irc::channel* own_chan> 
+            User();
 
-        ~User()
-        {
-            
-        }
+        public:
+            User(const std::string nick, const std::string user, const int fd);
+            // User(const User * other);
 
+            ~User();
 
-
-    public: 
-
-    std::string _username; 
-    std::string _nickname;
-    int fd; 
-
+    };
 
 }
 
-
-
-
-
-
-
-#endif 
+#endif

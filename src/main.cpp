@@ -1,5 +1,7 @@
 #include "Server.hpp"
 
+std::map<const std::string, irc::Server::command_function>    irc::Server::_commands;
+
 int main(int ac, char **av)
 {
     irc::Server * main_server;

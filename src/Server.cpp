@@ -9,10 +9,10 @@ irc::Server::Server( char * port_number )
     struct addrinfo     hints;
 
     { // Default value setting for member variables
-        _time_before_timeout.tv_sec = 30;
+        _time_before_timeout.tv_sec = 60;
         _time_before_timeout.tv_usec = 0;
         FD_ZERO(&_client_sockets);
-        memset(_main_buffer, 0, BUFFER_SIZE);
+        memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
         memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
         time(&_raw_start_time);
         // log ctor start
@@ -120,6 +120,8 @@ irc::Server::Server( char * port_number )
 
     FD_SET(_listening_socket, &_client_sockets);
     _opened_sockets.insert(_listening_socket);
+
+    init_commands_map();
 } // End of ctor, ready to loop
 
 static void
@@ -147,23 +149,66 @@ irc::Server::set_password( const std::string new_password )
     _password = new_password;
 }
 
+bool
+irc::Server::user_acquired(int fd)
+{ (void)fd;
+    // memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
+    // recv(fd, _main_buffer, MAX_REQUEST_LEN, 0);
+    // int i; 
+    // std::string nick; 
+    // std::string tmp(_main_buffer); 
+    // size_t separate = tmp.find_first_of('@'); 
+    // i = separate - 1;
+    // while(tmp.compare("<"))
+    //     i--;
+    // i++;
+    // tmp.copy((char*)nick.c_str(), (separate -1) - i, i); 
+    // std::map<std::string, User>::iterator it; 
+
+    // it = _connected_users.find(nick); 
+    // if (it != _connected_users.end())
+    // {
+    //     close(fd); 
+    //     // Method for closing fd on all fd set 
+    //     _connected_users.erase(nick); 
+    //     return false; 
+    // }
+    // // else if conditon for pass checking 
+
+    // else 
+    // {
+
+    //     std::string username; 
+    //     i = separate + 1; 
+    //     while(tmp.compare(">"))
+    //         i++;
+    //     i--; 
+    //     tmp.copy((char*)username.c_str(), (i - 1) - separate, i);
+    //     FD_SET(new_client_socket, &_client_sockets);
+    //     _connected_users.insert(std::make_pair(nick, User(nick, username, fd)));
+    //     _opened_sockets.insert(fd);
+        return true;
+    // }
+}
+
 void
 irc::Server::loop( void )
 {
-    int                                     number_of_ready_sockets;
-    struct timeval                          local_time_before_timeout;
-    int                                     max_fd;
-    std::map<std::string, User>::iterator   user_iterator;
-    std::map<std::string, User>::iterator   target_user_iterator;
-    int                                     new_client_socket;
-    struct addrinfo                         new_client_address;
+    int                                             number_of_ready_sockets;
+    struct timeval                                  local_time_before_timeout;
+    int                                             max_fd;
+    // std::map<std::string, irc::User *>::iterator    opened_socket_iterator;
+    // std::map<std::string, irc::User *>::iterator    target_user_iterator;
+    std::set<int>::iterator                         opened_socket_iterator;
+    int                                             new_client_socket;
+    struct addrinfo                                 new_client_address;
 
     for (;;)
     {
         // Set temporary variable that will get overwritten by select
         _ready_sockets = _client_sockets;
         local_time_before_timeout = _time_before_timeout;
-        max_fd = _opened_sockets.rbegin()->first;
+        max_fd = *(_opened_sockets.rbegin());
 
         std::cout << "Waiting on select\n";
         number_of_ready_sockets = select(max_fd + 1, &_ready_sockets, NULL, NULL, &local_time_before_timeout);
@@ -172,6 +217,7 @@ irc::Server::loop( void )
         {
             // log select error
             std::cerr << "Error in select: " << strerror(errno) << "\n";
+            break ; // WARNING: might have to retry
         }
         else if (number_of_ready_sockets == 0)
         {
@@ -190,34 +236,36 @@ irc::Server::loop( void )
                     fcntl(new_client_socket, F_SETFL, O_NONBLOCK);
 
 // TODO: verify if the password is correct and if the nick is unique. if so, let the programm continue. else, log wrong password or wrong nick (log in the function that checks for those)
-                    // If login info are correct and the user is registered in the database
-                    if (user_acquired(new_client_socket))
+// // If login info are correct and the user is registered in the database
+// if (user_acquired(new_client_socket))
+// {
+// // Register the new user (in user_acquired function)
+                    // _connected_users.insert(std::make_pair(std::string("toto" + std::to_string(new_client_socket)), User("toto", "toto", new_client_socket)));
+                    FD_SET(new_client_socket, &_client_sockets);
+                    _unnamed_users.insert(std::make_pair(new_client_socket, pending_socket()));
+                    _opened_sockets.insert(new_client_socket);
+
+    // // Send a welcome message to the new client
+    // send(new_client_socket, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
+
+                    // log connection accepted
+                    std::cout << "Accepted conection from : ";
+                    memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
+                    if (getnameinfo(new_client_address.ai_addr, new_client_address.ai_addrlen, _ip_buffer, sizeof(_ip_buffer), NULL, 0, NI_NUMERICHOST) != 0)
                     {
-                        // Register the new user (in user_acquired function)
-                        // _connected_users.insert(std::make_pair(new_client_socket, new_client_address));
-                        // FD_SET(new_client_socket, &_client_sockets);
-
-                        // Send a welcome message to the new client
-                        send(new_client_socket, "Sheeeeeeesh\n", strlen("Sheeeeeeesh\n"), MSG_DONTWAIT);
-
-                        // log connection accepted
-                        std::cout << "Accepted conection from : ";
-                        memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
-                        if (getnameinfo(new_client_address.ai_addr, new_client_address.ai_addrlen, _ip_buffer, sizeof(_ip_buffer), NULL, 0, NI_NUMERICHOST) != 0)
-                        {
-                            std::cout << "'could not translate the socket address'\n" ;
-                        }
-                        else
-                        {
-                            std::cout << _ip_buffer << '\n';
-                        }
-
-                        // Notify other users of the newcomer
-                        for (user_iterator = _connected_users.begin(); user_iterator != _connected_users.end(); ++user_iterator)
-                        {
-                            send(user_iterator->second._own_socket, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
-                        }
+                        std::cout << "'could not translate the socket address'\n" ;
                     }
+                    else
+                    {
+                        std::cout << _ip_buffer << '\n';
+                    }
+
+    // // Notify other users of the newcomer
+    // for (opened_socket_iterator = _connected_users.begin(); opened_socket_iterator != _connected_users.end(); ++opened_socket_iterator)
+    // {
+    //     send(opened_socket_iterator->second->_own_socket, "The new member is here!\n", strlen("The new member is here!\n"), MSG_DONTWAIT);
+    // }
+// }
                 }
                 else
                 {
@@ -227,24 +275,34 @@ irc::Server::loop( void )
             }
 
             // For each opened socket, check if it's in the set of ready to read and act accordingly
-            for (user_iterator = _connected_users.begin(); user_iterator != _connected_users.end() && number_of_ready_sockets > 0; ++user_iterator)
+            for (opened_socket_iterator = _opened_sockets.begin(); opened_socket_iterator != _opened_sockets.end() && number_of_ready_sockets > 0; ++opened_socket_iterator)
             {
                 // If the current socket is in the set of ready sockets
-                if (FD_ISSET(user_iterator->second._own_socket, &_ready_sockets))
+                if (FD_ISSET(*opened_socket_iterator, &_ready_sockets))
                 {
                     // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
 
-                    // Receive its data
-                    memset(_main_buffer, 0, BUFFER_SIZE);
-                    recv(user_iterator->second.own_socket, _main_buffer, BUFFER_SIZE, 0);
+                    // Receive its data 
+                    memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
+                    recv(*opened_socket_iterator, _main_buffer, MAX_REQUEST_LEN, 0);
 
-// TODO: parse the command and dont just send it to everyone
-                    // Send it raw to all users
-                    for (target_user_iterator = _connected_users.begin(); target_user_iterator != _connected_users.end(); ++target_user_iterator)
-                    {
-                        send(target_user_iterator->second.own_socket, _main_buffer, strlen(_main_buffer), MSG_DONTWAIT);
-                    }
+// TODO: recv errors handling
+                    std::cout << "socket n'" << *opened_socket_iterator << " raw input: ";
+                    std::cout << _main_buffer << "\n";
+
+                    cmd_caller(*opened_socket_iterator);
+
+// // TODO: parse the command and dont just send it to everyone
+// // Send it raw to all users
+// for (target_user_iterator = _opened_sockets.begin(); target_user_iterator != _opened_sockets.end(); ++target_user_iterator)
+// {
+//     send(target_user_iterator->second->_own_socket, _main_buffer, strlen(_main_buffer), MSG_DONTWAIT);
+// }
+
+
+
+
                 }
             }
         }
