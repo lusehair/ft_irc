@@ -116,8 +116,9 @@ namespace irc
             bool user_acquired(const int fd);
             void loop( void );
 
-        private:
             typedef void (irc::Server::*command_function)( void * );
+
+        private:
             static std::map<const std::string, command_function>    _commands;
 
             void init_commands_map( void );

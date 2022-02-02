@@ -3,9 +3,9 @@
 void
 irc::Server::init_commands_map( void )
 {
-    _commands.insert(std::make_pair(PASS, &irc::Server::cmd_pass));
-    _commands.insert(std::make_pair(NICK, &irc::Server::cmd_nick));
-    _commands.insert(std::make_pair(USER, &irc::Server::cmd_user));
+    (irc::Server::_commands).insert(std::make_pair(PASS, &irc::Server::cmd_pass));
+    (irc::Server::_commands).insert(std::make_pair(NICK, &irc::Server::cmd_nick));
+    (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
 }
 
 /**
@@ -214,8 +214,8 @@ void irc::Server::cmd_caller(int input_socket)
 
     if (input_command.size() - command_name.size() + 1 > 0)
     {
-        std::map<const std::string, command_function>::iterator it = _commands.find(command_name); 
-        if(it == _commands.end())
+        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name); 
+        if(it == (irc::Server::_commands).end())
         {
         // handle non-existing commands
             return; 
