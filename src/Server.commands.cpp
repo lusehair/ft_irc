@@ -188,8 +188,10 @@ void irc::Server::cmd_user(void *input_socket)
         }
         else if (unnamed_it->second.nick_name.size() != 0)
         {
-            _connected_users.insert(std::make_pair(unnamed_it->first, User(unnamed_it->second.nick_name, username, unnamed_it->first))); 
+            User * new_user = new User(unnamed_it->second.nick_name, username, unnamed_it->first); 
+            _connected_users.insert(std::make_pair(unnamed_it->first, new_user)); 
             _unnamed_users.erase(target_socket); 
+            send_header(new_user);
         }
 
         
@@ -221,3 +223,20 @@ void irc::Server::cmd_caller(int input_socket)
     }
 }
 
+void    irc::Server::send_header(const User * input_user) const
+{
+    std::string line = "Hello from server " + input_user->_nickname + '\n'; 
+    // std::ifstream head ("src/head_message"); 
+     int user_socket = input_user->_own_socket; 
+
+    // if(head.is_open())
+    // {
+    //     while(getline (head, line))
+    //     {
+    //       send(user_socket, line.c_str(), line.size(), MSG_DONTWAIT);  
+    //       line.clear(); 
+    //     }
+    // }
+   send(user_socket, line.c_str(), line.size(), MSG_DONTWAIT);  
+
+}
