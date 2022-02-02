@@ -12,6 +12,8 @@
 // fd, input and output
 # include <iostream>
 # include <unistd.h>
+#include <fstream>
+
 
 // INET6_ADDRSTRLEN
 #include <netinet/in.h>
@@ -126,6 +128,8 @@ namespace irc
             void cmd_user( void * input_socket );
 
             void cmd_caller( int input_socket );
+
+            void irc::Server::send_header(const User * input_user) const;
 
     };
 

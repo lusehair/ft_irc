@@ -192,6 +192,7 @@ void irc::Server::cmd_user(void *input_socket)
             _connected_users.insert(std::make_pair(unnamed_it->first, new_user)); 
             _unnamed_users.erase(target_socket); 
             send_header(new_user);
+            std::cout << "User " << new_user->_nickname << " with " << new_user->_own_socket << " fd" << std::endl; 
         }
 
         
@@ -210,6 +211,7 @@ void irc::Server::cmd_caller(int input_socket)
     size_t end = raw_command.find(" "); 
     // std::string ret;
     // raw_command.copy(ret.c_str(), end); 
+
 
     std::map<const std::string, command_function>::iterator it = _commands.find(raw_command.substr(0, end)); 
     if(it == _commands.end())
