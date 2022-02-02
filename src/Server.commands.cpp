@@ -46,7 +46,7 @@ void irc::Server::cmd_pass(void * input_fd)
     std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket); 
 
     // loop in all users to see if the socket is already registered
-    if(unnamed_it != _unnamed_users.end())
+    if(unnamed_it == _unnamed_users.end())
     {
         send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
         return ;
@@ -106,36 +106,38 @@ void irc::Server::cmd_pass(void * input_fd)
 void irc::Server::cmd_nick(void *input_socket)
 {
     const int target_socket = *(reinterpret_cast<int*>(input_socket)); 
-    
-    std::string nick;
+
     std::string input_nick(_main_buffer);
-    // std::size_t found = tmp.find(NICK) + 4; 
+    std::string nick = input_nick.substr(strlen(NICK) + 1); // segfault??
+    // std::size_t found = tmp.find(NICK) + 4;
 
     // tmp.copy((char*)nick.c_str(), tmp.size() - found , found);
-    std::map<std::string, irc::User *>::iterator connected_it = _connected_users.find(input_nick.substr(strlen(NICK) + 1)); 
-    std::map<int, pending_socket>::iterator unnamed_it;
-// _____________________________________________________________________________________________________________________________
-    // need to check if nickname is ban 
 
+    // need to check if nickname is ban
+
+    std::map<std::string, irc::User *>::iterator connected_it = _connected_users.find(nick);
     if (connected_it != _connected_users.end())
     {
-        if(connected_it->second._own_socket == target_socket) 
+        if(connected_it->second->_own_socket == target_socket) 
         {
-            User* tmp = connected_it->second; 
-            _connected_users.erase(connected_it->second._nickname); 
+            User * tmp = connected_it->second; 
+            _connected_users.erase(connected_it->second->_nickname); 
             tmp->_nickname = nick; 
             _connected_users.insert(std::make_pair(nick, tmp));
-            // REPLY TO CLIENT 
+            // REPLY TO CLIENT??
+            // log client nick change
         }
         else 
         {
             // SENT ERR MSG IF qui dit que le nickname est deja pris
+            // que fait-on si deja pris et pas toi
         }
+        return ;
     }
-    else if ((unnamed_it = _unnamed_users.find(target_socket)) == _unnamed_users.end())
-    {
-        unnamed_it->second = nick; 
-    }
+
+
+    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket);
+    unnamed_it->second.nick_name = nick;
 }
 
 
@@ -152,16 +154,22 @@ void irc::Server::cmd_nick(void *input_socket)
  */
 void irc::Server::cmd_user(void *input_fd)
 {
-    const int target_socket = *(reinterpret_cast<int*>(input_fd)); 
-    std::string username; 
+    const int target_socket = *(reinterpret_cast<int*>(input_fd));
+
     std::string tmp(_main_buffer);
-    std::size_t start = tmp.find(USER) + 5; 
-    std::size_t end = tmp.find(' ', start); 
+    // just need to check if enought spaces aand ":" char 
+    // first word after USER cmd use the substr like the previous method 
+    // Need to store the real name, find + 1 with end.
+
+    std::string username = tmp.substr();
+
+    std::size_t start = 5; // username start
+    std::size_t end = tmp.find(' ', start); // username end
     std::size_t nb_of_space = std::count(tmp.begin(), tmp.end(), ' ');
 
-    if(nb_of_space == 4)
+    if(nb_of_space < 4)
     {
-        send(target_socket, 461, sizeof(int), MSG_DONTWAIT);
+        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT);
         return ; 
     }
 

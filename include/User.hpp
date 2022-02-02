@@ -14,7 +14,7 @@ namespace irc
 
         public:
             const int           _own_socket;
-            const std::string   _nickname;
+            std::string         _nickname;
             std::string         _username;
             bool                _isOperator;
 
@@ -24,7 +24,7 @@ namespace irc
             User();
 
         public:
-            User(const std::string nick, const std::string user, int fd);
+            User(const std::string nick, const std::string user, const int fd);
             // User(const User * other);
 
             ~User();
