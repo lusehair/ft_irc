@@ -49,6 +49,7 @@ void irc::Server::cmd_pass(void * input_fd)
     if(unnamed_it == _unnamed_users.end())
     {
         send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
+        // LOG PASS [NICk] : Try to set pass again 
         return ;
     }
 
@@ -57,7 +58,9 @@ void irc::Server::cmd_pass(void * input_fd)
 
     if(input_pass.size() < strlen(PASS) + 2)
     {
+        
         send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT); 
+        // LOG PASS [SOCKET] bad request no param 
         return ;
     }
 
@@ -77,9 +80,11 @@ void irc::Server::cmd_pass(void * input_fd)
     if (input_pass.substr(strlen(PASS) + 1).compare(PASS) == 0)
     {
         _unnamed_users[target_socket].pass_check = true;
+        // LOG PASS [SOCKET] pass succesfull 
     }
     else
     {
+        // LOG PASS [SOCKET] bad password
         _unnamed_users.erase(target_socket);
         FD_CLR(target_socket, &_client_sockets);
         close(target_socket);
@@ -122,20 +127,22 @@ void irc::Server::cmd_nick(void *input_socket)
         {
             User * tmp = connected_it->second; 
             _connected_users.erase(connected_it->second->_nickname); 
+            // LOG NICK [tmp->nick] change his nickname for nick
             tmp->_nickname = nick; 
             _connected_users.insert(std::make_pair(nick, tmp));
+            
             // REPLY TO CLIENT??
-            // log client nick change
         }
         else 
         {
+            // LOG NICK ERROR[SOCKET] the nickname [nick] is already taken
             // SENT ERR MSG IF qui dit que le nickname est deja pris
             // que fait-on si deja pris et pas toi
         }
         return ;
     }
 
-
+    // LOG NICK [FD] : Connected to the server has [NICKNAME] nickname
     std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket);
     unnamed_it->second.nick_name = nick;
 }
@@ -170,6 +177,7 @@ void irc::Server::cmd_user(void *input_socket)
 
     if(nb_of_space < 4 || tmp.find(':') == std::string::npos)
     {
+        // LOG USER ERROR [Nick] : Bad request no paramater  
         send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT);
         return ; 
     }
@@ -183,6 +191,7 @@ void irc::Server::cmd_user(void *input_socket)
         std::map<std::string, User *>::iterator check_even_connected_it = _connected_users.find(unnamed_it->second.nick_name); 
         if(check_even_connected_it != _connected_users.end())
         {
+            // LOG USER ERROR [Nick] : [USERNAME] is already taken
             send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
             return ;
         }
@@ -192,7 +201,7 @@ void irc::Server::cmd_user(void *input_socket)
             _connected_users.insert(std::make_pair(unnamed_it->second.nick_name, new_user)); 
             _unnamed_users.erase(target_socket); 
             send_header(new_user);
-            std::cout << "User " << new_user->_nickname << " with " << new_user->_own_socket << " fd" << std::endl; 
+            // LOG USER : [NICKNAME] is connected to the server 
         }
 
         
@@ -217,6 +226,7 @@ void irc::Server::cmd_caller(int input_socket)
         std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name); 
         if(it == (irc::Server::_commands).end())
         {
+            // LOG CMD : [FD] sent bad request : _main_buffer 
         // handle non-existing commands
             return; 
         }
