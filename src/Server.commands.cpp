@@ -152,46 +152,53 @@ void irc::Server::cmd_nick(void *input_socket)
  * @sa RFC 2812 (3.1.3)
  * 
  */
-void irc::Server::cmd_user(void *input_fd)
+void irc::Server::cmd_user(void *input_socket)
 {
-    const int target_socket = *(reinterpret_cast<int*>(input_fd));
+    const int target_socket = *(reinterpret_cast<int*>(input_socket));
 
     std::string tmp(_main_buffer);
-    // just need to check if enought spaces aand ":" char 
+    // just need to check if enought spaces and ":" char 
     // first word after USER cmd use the substr like the previous method 
     // Need to store the real name, find + 1 with end.
 
-    std::string username = tmp.substr();
+
+
 
     std::size_t start = 5; // username start
     std::size_t end = tmp.find(' ', start); // username end
     std::size_t nb_of_space = std::count(tmp.begin(), tmp.end(), ' ');
 
-    if(nb_of_space < 4)
+    if(nb_of_space < 4 || tmp.find(':') == std::string::npos)
     {
         send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT);
         return ; 
     }
 
-    tmp.copy((char*)username.c_str(), start , end - start);
-    std::map<int, std::string>::iterator unnamed_it; 
+
+    std::string username = tmp.substr(5, end - start);
+    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket);
 
     if(unnamed_it != _unnamed_users.end())
     {
-        std::map<int, std::string>::iterator check_even_connected_it = _connected_users.find(username)->first; 
-        
-        if(check_even_conneceted_it != _connected_users.end())
+        std::map<std::string, User *>::iterator check_even_connected_it = _connected_users.find(unnamed_it->second.nick_name); 
+        if(check_even_connected_it != _connected_users.end())
         {
-            send(target_socket, 462, sizeof(int), MSG_DONTWAIT); 
+            send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
             return ;
         }
-        
-        else if(connected_it->second.size() != 0)
+        else if (unnamed_it->second.nick_name.size() != 0)
         {
-            _connected_users.insert(User(_connected_it->second, username, target_socket));
-            _unnamed_users.erase(target_socket);
-            //need to set a private function for sending message (Header etc ...)
+            _connected_users.insert(std::make_pair(unnamed_it->first, User(unnamed_it->second.nick_name, username, unnamed_it->first))); 
+            _unnamed_users.erase(target_socket); 
         }
+
+        
+        // else if(connected_it->second.nick_name.size() != 0)
+        // {
+        //     _connected_users.insert(User(_connected_it->second, username, target_socket));
+        //     _unnamed_users.erase(target_socket);
+        //     //need to set a private function for sending message (Header etc ...)
+        // }
     }
 }
 
