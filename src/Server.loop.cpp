@@ -20,7 +20,9 @@ irc::Server::loop( void )
         // Set temporary variable that will get overwritten by select
         _ready_sockets = _client_sockets;
         local_time_before_timeout = _time_before_timeout;
+// std::cout << "Before op use\n";
         max_fd = *(_opened_sockets.rbegin());
+// std::cout << "After op use\n";
 
         std::cout << "Waiting on select\n";
         number_of_ready_sockets = select(max_fd + 1, &_ready_sockets, NULL, NULL, &local_time_before_timeout);
@@ -109,6 +111,17 @@ irc::Server::loop( void )
                         _unnamed_users.erase(pending_socket_iterator);
                         pending_socket_iterator = tmp_pending_socket_iterator;
                     }
+                    else if (byte_count == 0)
+                    {
+                        std::cout << "\nsocket n'" << pending_socket_iterator->first << " is closed on client side\n";
+                        close(pending_socket_iterator->first);
+                        _opened_sockets.erase(pending_socket_iterator->first);
+                        FD_CLR(pending_socket_iterator->first, &_client_sockets);
+                        tmp_pending_socket_iterator = pending_socket_iterator;
+                        ++tmp_pending_socket_iterator;
+                        _unnamed_users.erase(pending_socket_iterator);
+                        pending_socket_iterator = tmp_pending_socket_iterator;
+                    }
                     std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
                     cmd_caller(pending_socket_iterator->first);
@@ -135,6 +148,17 @@ irc::Server::loop( void )
                             continue ;
                         }
                         std::cout << "\nsocket n'" << connected_user_iterator->second->_own_socket << " recv error: " << strerror(errno) << "\n";
+                        close(connected_user_iterator->second->_own_socket);
+                        _opened_sockets.erase(connected_user_iterator->second->_own_socket);
+                        FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);
+                        tmp_connected_user_iterator = connected_user_iterator;
+                        ++tmp_connected_user_iterator;
+                        _connected_users.erase(connected_user_iterator);
+                        connected_user_iterator = tmp_connected_user_iterator;
+                    }
+                    else if (byte_count == 0)
+                    {
+                        std::cout << "\nsocket n'" << connected_user_iterator->second->_own_socket << " is closed on client side\n";
                         close(connected_user_iterator->second->_own_socket);
                         _opened_sockets.erase(connected_user_iterator->second->_own_socket);
                         FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);

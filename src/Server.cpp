@@ -51,7 +51,7 @@ irc::Server::Server( const char * port_number, const char * input_pass )
             for (address_iterator = potential_addresses; address_iterator != NULL; address_iterator = address_iterator->ai_next)
             {
                 // log try to bind to a socket
-                LOG_TRYBIDINGSOCKET(_raw_start_time, address_iterator->ai_addr->sa_data); 
+                LOG_TRYBIDINGSOCKET(_raw_start_time, _listening_socket); 
                 _listening_socket = socket(address_iterator->ai_family, address_iterator->ai_socktype, address_iterator->ai_protocol);
 
                 if (_listening_socket == -1)
@@ -141,23 +141,31 @@ irc::Server::Server( const char * port_number, const char * input_pass )
 } // End of ctor, ready to loop
 
 irc::Server::~Server()
-{    
+{
     for(std::set<int>::iterator socket_iterator = _opened_sockets.begin(); socket_iterator != _opened_sockets.end(); ++socket_iterator)
     {
         LOG_CLOSINGFD(_raw_start_time, *socket_iterator);
-        
         close(*socket_iterator);
-        //std::cout << socket << " has been closed\n";
     }
+
+    for(std::map<std::string, User *>::iterator user_iterator = _connected_users.begin(); user_iterator != _connected_users.end(); ++user_iterator)
+    {
+        // LOG_CLOSINGFD(_raw_start_time, *socket_iterator);
+        std::cout << "User: " << user_iterator->first << " deletion.\n";
+        delete (user_iterator->second);
+    }
+    _connected_users.clear();
+    std::cout << "The map of users has been emptied\n";
 
     FD_ZERO(&_client_sockets);
     std::cout << "The fd_set of client sockets has been emptied\n";
-    _connected_users.clear();
-    std::cout << "The map of users has been emptied\n";
     _opened_sockets.clear();
     std::cout << "The set of opened sockets has been emptied\n";
+    _unnamed_users.clear();
+    std::cout << "The map of pending sockets has been emptied\n";
+    delete (_password);
+    std::cout << "The password has been freed\n";
     _log_file.close();
-    delete(_password);
 }
 
 // void

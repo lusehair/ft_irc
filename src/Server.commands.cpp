@@ -8,6 +8,50 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
 }
 
+void irc::Server::cmd_caller(int input_socket)
+{
+    std::string input_command(_main_buffer); 
+    std::string command_name = input_command.substr(0, input_command.find(" "));
+    // std::string ret;
+    // raw_command.copy(ret.c_str(), end); 
+
+    if (input_command.size() - command_name.size() + 1 > 0)
+    {
+        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name); 
+        if(it == (irc::Server::_commands).end())
+        {
+            // LOG CMD : [FD] sent bad request : _main_buffer 
+        // handle non-existing commands
+            return; 
+        }
+        else 
+        {
+            (this->*(it->second))(&input_socket);
+        }
+    }
+    else
+    {
+        // ERR_NEEDMOREPARAMS
+    }
+}
+
+void    irc::Server::send_header(const User * input_user) const
+{
+    std::string line = "Hello from server " + input_user->_nickname + '\n'; 
+    // std::ifstream head ("src/head_message"); 
+     int user_socket = input_user->_own_socket; 
+
+    // if(head.is_open())
+    // {
+    //     while(getline (head, line))
+    //     {
+    //       send(user_socket, line.c_str(), line.size(), 0);  
+    //       line.clear(); 
+    //     }
+    // }
+   send(user_socket, line.c_str(), line.size(), 0);
+}
+
 /**
  * @brief Hash Password 
  * 
@@ -72,7 +116,7 @@ void irc::Server::cmd_pass(void * input_fd)
     const char *clean_pass = input_pass.substr(strlen(PASS) + 1, input_pass.find('\n') - (strlen(PASS) + 1)).c_str(); 
     int *hash_pass = pass_hash(clean_pass); 
 
-        std::cout << "client string to compare: |" << clean_pass << "|" << "the len of pass" << strlen(clean_pass) << std::endl; 
+    std::cout << "client string to compare: |" << clean_pass << "|" << "the len of pass" << strlen(clean_pass) << std::endl; 
 
 
     for(unsigned long i = 0; i < strlen(clean_pass); i++)
@@ -82,12 +126,13 @@ void irc::Server::cmd_pass(void * input_fd)
         {
             
             puts("here");
-            delete(hash_pass);
+            delete (hash_pass);
             LOG_PASSFAILED(_raw_start_time, target_socket); 
             _unnamed_users.erase(target_socket);
+            _opened_sockets.erase(target_socket);
             FD_CLR(target_socket, &_client_sockets);
             close(target_socket);
-            return;
+            return ;
         }
         _unnamed_users[target_socket].pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
@@ -225,48 +270,4 @@ void irc::Server::cmd_user(void *input_socket)
         //     //need to set a private function for sending message (Header etc ...)
         // }
     }
-}
-
-void irc::Server::cmd_caller(int input_socket)
-{
-    std::string input_command(_main_buffer); 
-    std::string command_name = input_command.substr(0, input_command.find(" "));
-    // std::string ret;
-    // raw_command.copy(ret.c_str(), end); 
-
-    if (input_command.size() - command_name.size() + 1 > 0)
-    {
-        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name); 
-        if(it == (irc::Server::_commands).end())
-        {
-            // LOG CMD : [FD] sent bad request : _main_buffer 
-        // handle non-existing commands
-            return; 
-        }
-        else 
-        {
-            (this->*(it->second))(&input_socket);
-        }
-    }
-    else
-    {
-        // ERR_NEEDMOREPARAMS
-    }
-}
-
-void    irc::Server::send_header(const User * input_user) const
-{
-    std::string line = "Hello from server " + input_user->_nickname + '\n'; 
-    // std::ifstream head ("src/head_message"); 
-     int user_socket = input_user->_own_socket; 
-
-    // if(head.is_open())
-    // {
-    //     while(getline (head, line))
-    //     {
-    //       send(user_socket, line.c_str(), line.size(), 0);  
-    //       line.clear(); 
-    //     }
-    // }
-   send(user_socket, line.c_str(), line.size(), 0);
 }
