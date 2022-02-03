@@ -12,11 +12,19 @@ namespace irc
     class User
     {
 
+        private:
+            struct partial_packet
+            {
+                std::string pending_recv;
+                std::string pending_send;
+            };
+
         public:
-            const int           _own_socket;
+            int                 _own_socket;
             std::string         _nickname;
             std::string         _username;
             bool                _isOperator;
+            partial_packet      _pending_data;
 
         private:
             std::list<void *>   _own_chan; // void * = const Channel *

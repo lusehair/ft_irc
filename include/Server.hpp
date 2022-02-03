@@ -92,11 +92,18 @@ namespace irc
                 }
             };
 
+            struct partial_packet
+            {
+                std::string pending_recv;
+                std::string pending_send;
+            };
+
             // user_name??
             struct pending_socket
             {
                 std::string     nick_name;
                 bool            pass_check;
+                partial_packet  _pending_data;
 
                 pending_socket()
                     : nick_name(std::string())
@@ -117,7 +124,7 @@ namespace irc
             bool user_acquired(const int fd);
             void loop( void );
 
-            typedef void (irc::Server::*command_function)( void * );
+            typedef void (irc::Server::*command_function)( const int, const std::string, User * );
 
         private:
 
@@ -127,11 +134,12 @@ namespace irc
 
             int * pass_hash(std::string input_pass );
 
-            void cmd_pass( void * input_socket );
-            void cmd_nick( void * input_socket );
-            void cmd_user( void * input_socket );
+            void cmd_pass( const int input_socket, const std::string command_line, User * input_user);
+            void cmd_nick( const int input_socket, const std::string command_line, User * input_user);
+            void cmd_user( const int input_socket, const std::string command_line, User * input_user);
 
-            void cmd_caller( int input_socket );
+            template < typename T >
+                void cmd_caller( T identifier );
 
             void send_header(const User * input_user) const;
 
