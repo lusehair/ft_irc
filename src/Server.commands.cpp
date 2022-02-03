@@ -48,7 +48,7 @@ void irc::Server::cmd_pass(void * input_fd)
     // loop in all users to see if the socket is already registered
     if(unnamed_it == _unnamed_users.end())
     {
-        send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
+        send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), 0); 
         return ;
     }
 
@@ -57,7 +57,7 @@ void irc::Server::cmd_pass(void * input_fd)
 
     if(input_pass.size() < strlen(PASS) + 2)
     {
-        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT); 
+        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), 0); 
         return ;
     }
 
@@ -170,7 +170,7 @@ void irc::Server::cmd_user(void *input_socket)
 
     if(nb_of_space < 4 || tmp.find(':') == std::string::npos)
     {
-        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), MSG_DONTWAIT);
+        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), 0);
         return ; 
     }
 
@@ -183,7 +183,7 @@ void irc::Server::cmd_user(void *input_socket)
         std::map<std::string, User *>::iterator check_even_connected_it = _connected_users.find(unnamed_it->second.nick_name); 
         if(check_even_connected_it != _connected_users.end())
         {
-            send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), MSG_DONTWAIT); 
+            send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), 0); 
             return ;
         }
         else if (unnamed_it->second.nick_name.size() != 0)
@@ -241,10 +241,10 @@ void    irc::Server::send_header(const User * input_user) const
     // {
     //     while(getline (head, line))
     //     {
-    //       send(user_socket, line.c_str(), line.size(), MSG_DONTWAIT);  
+    //       send(user_socket, line.c_str(), line.size(), 0);  
     //       line.clear(); 
     //     }
     // }
-   send(user_socket, line.c_str(), line.size(), MSG_DONTWAIT);  
+   send(user_socket, line.c_str(), line.size(), 0);  
 
 }
