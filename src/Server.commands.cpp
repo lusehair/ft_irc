@@ -60,10 +60,10 @@ void irc::Server::cmd_pass(void * input_fd)
     std::string input_pass(_main_buffer);
     // std::string raw_pass; 
 
-    if(input_pass.size() < strlen(PASS) + 2)
+    if(input_pass.size() < strlen(PASS) + 1)
     {
         LOG_NOPARAM(_raw_start_time, target_socket, input_pass);
-        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), 0);
+        send(target_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ;
     }
 

@@ -87,7 +87,7 @@
 
 #define LOG_NICKCHANGE(TIME, OLDNICK, NICK) _log_file << log_time(TIME) << "s" << ": " << OLDNICK << " Change his nickname as #NICK \n"
 #define LOG_NICKTAKEN(TIME, NICK, NICKTAKEN) _log_file << log_time(TIME) << "s" << ": " <<  NICK << " Nickname already taken  : " << NICKTAKEN << "\n"
-#define LOG_NICKREGISTER(TIME, NICK) _log_file << log_time(TIME) << "s" << ": connected to the server with" << NICK << "\n" 
+#define LOG_NICKREGISTER(TIME, NICK) _log_file << log_time(TIME) << "s" << ": connected to the server with " << NICK << "\n" 
 
 #define LOG_USERTAKEN(TIME, NICK, USERNAME) _log_file << log_time(TIME) << "s" << ": " << NICK << " Try to set a username already set : " << USERNAME << "\n"
 #define LOG_USERCONNECTED(TIME, NICK) _log_file << log_time(TIME) << "s" <<  ": " << NICK << " Is fully connected ! \n"

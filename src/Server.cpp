@@ -149,7 +149,6 @@ irc::Server::~Server()
         close(*socket_iterator);
         //std::cout << socket << " has been closed\n";
     }
-
     FD_ZERO(&_client_sockets);
     std::cout << "The fd_set of client sockets has been emptied\n";
     _connected_users.clear();
