@@ -96,7 +96,7 @@ void irc::Server::cmd_pass(void * input_fd)
     if(unnamed_it == _unnamed_users.end())
     {
         LOG_PASSTWICE(_raw_start_time, target_socket);
-        send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), 0);
+        send(target_socket, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
         return ;
     }
@@ -234,7 +234,7 @@ void irc::Server::cmd_user(void *input_socket)
     {
         // LOG USER ERROR [Nick] : Bad request no paramater
         LOG_NOPARAM(_raw_start_time, target_socket, tmp);
-        send(target_socket, ERR_NEEDMOREPARAMS, sizeof(int), 0);
+        send(target_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ; 
     }
 
@@ -249,7 +249,7 @@ void irc::Server::cmd_user(void *input_socket)
         {
             // LOG USER ERROR [Nick] : [USERNAME] is already taken
             LOG_USERTAKEN(_raw_start_time, unnamed_it->second.nick_name, username); 
-            send(target_socket, ERR_ALREADYREGISTRED, sizeof(int), 0); 
+            send(target_socket, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
             return ;
         }
         else if (unnamed_it->second.nick_name.size() != 0)
