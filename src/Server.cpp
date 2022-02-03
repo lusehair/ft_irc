@@ -1,7 +1,7 @@
 #include "Server.hpp"
 
-irc::Server::Server( char * port_number )
-    : _password("")
+irc::Server::Server( const char * port_number, const char * input_pass )
+    : _password(pass_hash(input_pass))
 {
     int                 optval;
     struct addrinfo *   potential_addresses;
@@ -157,10 +157,11 @@ irc::Server::~Server()
     _opened_sockets.clear();
     std::cout << "The set of opened sockets has been emptied\n";
     _log_file.close();
+    delete(_password);
 }
 
-void
-irc::Server::set_password( const std::string new_password )
-{
-    _password = new_password;
-}
+// void
+// irc::Server::set_password( const std::string new_password )
+// {
+//     _password = new_password;
+// }

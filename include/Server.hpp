@@ -69,7 +69,7 @@ namespace irc
     {
 
         private:
-            std::string                     _password;
+            int *                           _password;
             int                             _listening_socket;
             fd_set                          _client_sockets; // for select parameters
             fd_set                          _ready_sockets; // for select return
@@ -108,7 +108,7 @@ namespace irc
 
         public:
             // Only ctor actually used
-            Server( char * port_number ); // TODO: add password as a second parameter
+            Server( const char * port_number, const char * input_pass ); // TODO: add password as a second parameter
 
             ~Server();
 

@@ -93,14 +93,14 @@ irc::Server::loop( void )
                     // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(pending_socket_iterator->first, _main_buffer, MAX_REQUEST_LEN, 0);
-                    std::cout << "socket n'" << pending_socket_iterator->first << "bytes received: " << byte_count;
+                    std::cout << "socket n'" << pending_socket_iterator->first << ". bytes received: " << byte_count;
                     if (byte_count == -1)
                     {
                         if (errno == EAGAIN)
                         {
                             continue ;
                         }
-                        std::cout << "socket n'" << pending_socket_iterator->first << " recv error: " << strerror(errno) << "\n";
+                        std::cout << "\nsocket n'" << pending_socket_iterator->first << " recv error: " << strerror(errno) << "\n";
                         close(pending_socket_iterator->first);
                         _opened_sockets.erase(pending_socket_iterator->first);
                         FD_CLR(pending_socket_iterator->first, &_client_sockets);
@@ -109,7 +109,7 @@ irc::Server::loop( void )
                         _unnamed_users.erase(pending_socket_iterator);
                         pending_socket_iterator = tmp_pending_socket_iterator;
                     }
-                    std::cout << " raw input: [\n" << _main_buffer << "]\n";
+                    std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
                     cmd_caller(pending_socket_iterator->first);
                 }
@@ -127,14 +127,14 @@ irc::Server::loop( void )
                     // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(connected_user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
-                    std::cout << "socket n'" << connected_user_iterator->second->_own_socket << "bytes received: " << byte_count;
+                    std::cout << "socket n'" << connected_user_iterator->second->_own_socket << ". bytes received: " << byte_count;
                     if (byte_count == -1)
                     {
                         if (errno == EAGAIN)
                         {
                             continue ;
                         }
-                        std::cout << "socket n'" << connected_user_iterator->second->_own_socket << " recv error: " << strerror(errno) << "\n";
+                        std::cout << "\nsocket n'" << connected_user_iterator->second->_own_socket << " recv error: " << strerror(errno) << "\n";
                         close(connected_user_iterator->second->_own_socket);
                         _opened_sockets.erase(connected_user_iterator->second->_own_socket);
                         FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);
@@ -143,7 +143,7 @@ irc::Server::loop( void )
                         _connected_users.erase(connected_user_iterator);
                         connected_user_iterator = tmp_connected_user_iterator;
                     }
-                    std::cout << " raw input: [\n" << _main_buffer << "]\n";
+                    std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
                     cmd_caller(connected_user_iterator->second->_own_socket);
                 }

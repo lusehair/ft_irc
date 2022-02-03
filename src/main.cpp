@@ -13,7 +13,7 @@ int main(int ac, char **av)
 
     try
     {
-        main_server = new irc::Server(av[1]);
+        main_server = new irc::Server(av[1], av[2]);
     }
     catch (std::exception & e)
     {

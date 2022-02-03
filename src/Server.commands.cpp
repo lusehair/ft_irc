@@ -40,6 +40,9 @@ int *    irc::Server::pass_hash(const char * input_pass)
  * @sa RFC 2812 (3.1.1)
  * 
  */
+
+
+
 void irc::Server::cmd_pass(void * input_fd)
 {
     const int target_socket = *(reinterpret_cast<int *>(input_fd));
@@ -66,32 +69,33 @@ void irc::Server::cmd_pass(void * input_fd)
 
     // input_pass.copy((char*)raw_pass.c_str(), input_pass.size() - 6 , 6);
     // int *hash_pass = pass_hash((char*)raw_pass.c_str()); 
-    // int *hash_pass = pass_hash(raw_pass.substr(strlen(PASS) + 1).c_str());
-    
-    // for(int i = 0; i < strlen(raw_pass.c_str()); i++)
-    // {
-    //     if(hash_pass[i] != _password[i])
-    //     {
-    //         delete(hash_pass);
-    //         return;
-    //     }
-    // }
+    const char *clean_pass = input_pass.substr(strlen(PASS) + 1, input_pass.find('\n') - (strlen(PASS) + 1)).c_str(); 
+    int *hash_pass = pass_hash(clean_pass); 
 
-    if (input_pass.substr(strlen(PASS) + 1).compare(PASS) == 0)
+        std::cout << "client string to compare: |" << clean_pass << "|" << "the len of pass" << strlen(clean_pass) << std::endl; 
+
+
+    for(unsigned long i = 0; i < strlen(clean_pass); i++)
     {
+        std::cout << "client hash : " << hash_pass[i] << " the hash pass : " << _password[i] << std::endl; 
+        if(hash_pass[i] != _password[i])
+        {
+            
+            puts("here");
+            delete(hash_pass);
+            LOG_PASSFAILED(_raw_start_time, target_socket); 
+            _unnamed_users.erase(target_socket);
+            FD_CLR(target_socket, &_client_sockets);
+            close(target_socket);
+            return;
+        }
         _unnamed_users[target_socket].pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
         LOG_PASSSUCCESS(_raw_start_time, input_fd); 
     }
-    else
-    {
-        // LOG PASS [SOCKET] bad password
-        LOG_PASSFAILED(_raw_start_time, target_socket); 
-        _unnamed_users.erase(target_socket);
-        FD_CLR(target_socket, &_client_sockets);
-        close(target_socket);
-    }
     
+    //print_pass(input_pass); 
+
     // _unnamed_users.insert(make_pair(target_socket, "")); 
     // delete(hash_pass); 
 }
