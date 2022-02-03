@@ -1,8 +1,13 @@
-#include "log..hpp"
+#include "log.hpp"
 
 
 
-void    irc::Log::log_cmd(t_time time) 
+long    log_time(time_t input_time) 
 {
-    
+    time_t current_time; 
+    time(&current_time); 
+    long ret = current_time - input_time; 
+    return (ret); 
+
+
 }

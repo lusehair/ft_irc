@@ -42,6 +42,10 @@
 // for_each
 # include <algorithm>
 
+
+# include <fstream>
+
+
 // Size of the receiving buffer being 512 as the max size of a packet defined in rfc 2812
 # define MAX_REQUEST_LEN 512
 // Also named backLog, use in listen to limit the number of simultaneous client connections
@@ -56,6 +60,7 @@
 # define ERR_ALREADYREGISTRED "462"
 
 #include "User.hpp"
+#include "log.hpp"
 
 namespace irc
 {
@@ -77,6 +82,7 @@ namespace irc
             struct timeval                  _time_before_timeout; // select timeout
             char                            _main_buffer[MAX_REQUEST_LEN + 1];
             char                            _ip_buffer[INET6_ADDRSTRLEN];
+            std::ofstream                   _log_file; 
 
             struct CtorException : std::exception
             {
@@ -114,6 +120,7 @@ namespace irc
             typedef void (irc::Server::*command_function)( void * );
 
         private:
+
             static std::map<const std::string, command_function>    _commands;
 
             void init_commands_map( void );
