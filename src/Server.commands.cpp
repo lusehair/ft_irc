@@ -52,6 +52,24 @@ void    irc::Server::send_header(const User * input_user) const
    send(user_socket, line.c_str(), line.size(), 0);
 }
 
+
+bool    blank_arguments(std::string input_line, const char * cmd)
+{
+    
+
+    // for(size_t i = strlen(cmd) + 1 ; input_line.size(); i++)
+    // {
+    //     if(input_line[i] != ' ' )
+    //     {
+    //           std::cout << "INTO THE FOR|" << input_line[i] << '|';
+    //           return false;
+    //     }
+          
+    // }
+    // puts("why is not here");
+    return true;
+}
+
 /**
  * @brief Hash Password 
  * 
@@ -61,9 +79,9 @@ void    irc::Server::send_header(const User * input_user) const
  * @param input_pass (char*) 
  * @return int* 
  */
-int *    irc::Server::pass_hash(const char * input_pass)
+int *    irc::Server::pass_hash(std::string input_pass)
 {
-    int len = strlen(input_pass); 
+    int len = input_pass.size();
     int * ret = new int[len];
     for (int i = 0; i < len; i++)
     {
@@ -95,6 +113,8 @@ void irc::Server::cmd_pass(void * input_fd)
     // loop in all users to see if the socket is already registered
     if(unnamed_it == _unnamed_users.end())
     {
+                puts("blank");
+
         LOG_PASSTWICE(_raw_start_time, target_socket);
         send(target_socket, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
@@ -104,7 +124,7 @@ void irc::Server::cmd_pass(void * input_fd)
     std::string input_pass(_main_buffer);
     // std::string raw_pass; 
 
-    if(input_pass.size() < strlen(PASS) + 1)
+    if(blank_arguments(input_pass, PASS))
     {
         LOG_NOPARAM(_raw_start_time, target_socket, input_pass);
         send(target_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
@@ -113,13 +133,13 @@ void irc::Server::cmd_pass(void * input_fd)
 
     // input_pass.copy((char*)raw_pass.c_str(), input_pass.size() - 6 , 6);
     // int *hash_pass = pass_hash((char*)raw_pass.c_str()); 
-    const char *clean_pass = input_pass.substr(strlen(PASS) + 1, input_pass.find('\n') - (strlen(PASS) + 1)).c_str(); 
+    std::string clean_pass = input_pass.substr(strlen(PASS) + 1, input_pass.find('\n') - (strlen(PASS) + 1)); 
     int *hash_pass = pass_hash(clean_pass); 
 
-    std::cout << "client string to compare: |" << clean_pass << "|" << "the len of pass" << strlen(clean_pass) << std::endl; 
+    std::cout << "client string to compare: |" << clean_pass << "|" << "the len of pass" << clean_pass.size() << std::endl; 
 
 
-    for(unsigned long i = 0; i < strlen(clean_pass); i++)
+    for(unsigned long i = 0; i < clean_pass.size(); i++)
     {
         std::cout << "client hash : " << hash_pass[i] << " the hash pass : " << _password[i] << std::endl; 
         if(hash_pass[i] != _password[i])

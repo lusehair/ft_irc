@@ -73,7 +73,7 @@ namespace irc
             int                             _listening_socket;
             fd_set                          _client_sockets; // for select parameters
             fd_set                          _ready_sockets; // for select return
-            struct                          pending_socket;
+            struct                          pending_socket; 
             std::map<int, pending_socket>   _unnamed_users;
             std::map<std::string, User *>   _connected_users;
             std::set<void *>                _running_channels; // void * == Channel; int == Modes
@@ -125,7 +125,7 @@ namespace irc
 
             void init_commands_map( void );
 
-            int * pass_hash( const char * input_pass );
+            int * pass_hash(std::string input_pass );
 
             void cmd_pass( void * input_socket );
             void cmd_nick( void * input_socket );
