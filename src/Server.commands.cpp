@@ -285,7 +285,7 @@ void    irc::Server::cmd_pong(const int input_fd, const std::string command_line
 {
     if(input_user == NULL)
     {
-        send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
+        send(input_fd, ERR_ERR_NOTREGISTERED, strlen(ERR_ERR_NOTREGISTERED), 0); 
 
     }
     std::string ret = command_line; 
@@ -294,12 +294,33 @@ void    irc::Server::cmd_pong(const int input_fd, const std::string command_line
 }
 
 
-void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
+void    irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
 {
+    
+
+    size_t end = command_line.find(" ", strlen(KILL) + 2); 
+    std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
+    std::string reason = command_line.substr(end + 1, command_line.end());     
     if(input_user == NULL || !input_user->_isOperator)
     {
         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
     }
+    
+    std::map<std::string , User * >::iterator user_it = _connected_user.find(killed_user);
+    if(user_it == _connected_users.end())
+    {
+        
+    }
+
+    else if(input_user->_isOperator)
+    {
+        // maybe send another msg to killed user 
+        send(input_fd, reason.c_str(), reason.size(), 0);
+        // close & delete user method()
+        
+    }
 
 }
+
+
 

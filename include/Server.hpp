@@ -55,6 +55,7 @@
 # define NICK "NICK"
 # define USER "USER"
 # define PRIVMSG "PRIVMSG"
+#define KILL "KILL"
 
 # define ERR_NEEDMOREPARAMS "461"
 # define ERR_ALREADYREGISTRED "462"     
@@ -140,7 +141,7 @@ namespace irc
             void cmd_nick( const int input_socket, const std::string command_line, User * input_user);
             void cmd_user( const int input_socket, const std::string command_line, User * input_user);
             void cmd_pong( const int input_socket, const std::string command_line, User * input_user); 
-            void cmd_kick( const int input_socket, const std::string command_line, User * input_user);
+            void cmd_kill( const int input_socket, const std::string command_line, User * input_user);
 
 
             template < typename T >
