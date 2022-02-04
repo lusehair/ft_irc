@@ -15,8 +15,8 @@ namespace irc
         private:
             struct partial_packet
             {
-                std::string pending_recv;
-                std::string pending_send;
+                std::string _recv;
+                std::string _send;
             };
 
         public:

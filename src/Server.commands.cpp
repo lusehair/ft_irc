@@ -1,6 +1,6 @@
 #include "Server.hpp"
 #include "log.hpp"
-
+#include <cstdio>
 void
 irc::Server::init_commands_map( void )
 {
@@ -9,62 +9,62 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
 }
 
-// function to split on \n, check if there is one and delete the command line from pending_recv after each call to the corresponding command function
+// function to split on \n, check if there is one and delete the command line from _recv after each call to the corresponding command function
 
 template <>
-void irc::Server::cmd_caller<std::map<int, pending_socket>::iterator>(std::map<int, pending_socket>::iterator unnamed_user_iterator)
+void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterator>(std::map<int, pending_socket>::iterator unnamed_user_iterator)
 {
-    std::string input_command(_main_buffer); 
-    std::string command_name = input_command.substr(0, input_command.find(" "));
-    // std::string ret;
-    // raw_command.copy(ret.c_str(), end); 
-
-    if (input_command.size() - command_name.size() + 1 > 0)
+    std::string & received_data = unnamed_user_iterator->second._pending_data._recv;
+    size_t  endl_pos;
+    size_t  last_endl_pos = 0;
+    while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
+    // for (int i = 0; i < 2; ++i)
     {
-        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name); 
-        if(it == (irc::Server::_commands).end())
+// (endl_pos = received_data.find("\r\n"));
+        std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
+        std::cout << "|" << command_line << "|\n";
+        size_t command_name_end = command_line.find(" ", last_endl_pos);
+        if (command_name_end != command_line.npos && !(command_name_end < endl_pos))
         {
-            // LOG CMD : [FD] sent bad request : _main_buffer 
-        // handle non-existing commands
-            return; 
-        }
-        else 
+            command_name_end = endl_pos;
+        } 
+        std::string command_name = command_line.substr(last_endl_pos, command_name_end - last_endl_pos);
+        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name);
+        if (it != irc::Server::_commands.end())
         {
-            (this->*(it->second))(input_socket, /* parsed string */, NULL);
+            (this->*(it->second))(unnamed_user_iterator->first, command_line, NULL);
         }
+        last_endl_pos = endl_pos + 2;
     }
-    else
-    {
-        // ERR_NEEDMOREPARAMS
-    }
+    received_data.erase(0, last_endl_pos);
 }
 
 template <>
 void irc::Server::cmd_caller<irc::User *>(User * input_user)
 {
-    std::string input_command(_main_buffer); 
-    std::string command_name = input_command.substr(0, input_command.find(" "));
-    // std::string ret;
-    // raw_command.copy(ret.c_str(), end);
-
-    if (input_command.size() - command_name.size() + 1 > 0)
+    std::string & received_data = input_user->_pending_data._recv;
+    size_t  endl_pos;
+    size_t  last_endl_pos = 0;
+    while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
+    // for (int i = 0; i < 2; ++i)
     {
-        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name); 
-        if(it == (irc::Server::_commands).end())
+    // (endl_pos = received_data.find("\r\n"));
+        std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
+        std::cout << "|" << command_line << "|\n";
+        size_t command_name_end = command_line.find(" ", last_endl_pos);
+        if (command_name_end != command_line.npos && !(command_name_end < endl_pos))
         {
-            // LOG CMD : [FD] sent bad request : _main_buffer 
-        // handle non-existing commands
-            return; 
-        }
-        else 
+            command_name_end = endl_pos;
+        } 
+        std::string command_name = command_line.substr(last_endl_pos, command_name_end - last_endl_pos);
+        std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name);
+        if (it != irc::Server::_commands.end())
         {
-            (this->*(it->second))(input_user->_own_socket, /* parsed string */, input_user);
+            (this->*(it->second))(input_user->_own_socket, command_line, input_user);
         }
+        last_endl_pos = endl_pos + 2;
     }
-    else
-    {
-        // ERR_NEEDMOREPARAMS
-    }
+    received_data.erase(0, last_endl_pos);
 }
 
 void    irc::Server::send_header(const User * input_user) const
@@ -140,8 +140,6 @@ int *    irc::Server::pass_hash(std::string input_pass)
 
 void irc::Server::cmd_pass(const int input_fd, const std::string command_line, User * input_user)
 {
-    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd); 
-
     // loop in all users to see if the socket is already registered
     if(input_user != NULL)
     {
