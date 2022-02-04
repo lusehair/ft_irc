@@ -26,33 +26,33 @@ namespace irc
             Channel & operator = (const Channel & other);
 
         public:
-            Channel(const User * operator, const std::string channel_name);
+            Channel(const User * channel_operator, const std::string channel_name);
 
             ~Channel();
 
             void add_user(const User * new_member);
-            void kick_user(const User * target_member);
+            void kick_user(User * target_member);
 
     };
 
 }
 
-irc::Channel::Channel( const User * operator, const std::string channel_name )
+irc::Channel::Channel( const User * channel_operator, const std::string channel_name )
     : _name(channel_name)
 {
-    _members.insert(make_pair(operator, true));
+    _members.insert(std::make_pair(channel_operator, true));
     ++_members_count;
 }
 
 void
 irc::Channel::add_user( const User * new_member )
 {
-    _members.insert(make_pair(new_member, false));
+    _members.insert(std::make_pair(new_member, false));
     ++_members_count;
 }
 
 void
-irc::Channel::kick_user( const User * target_member )
+irc::Channel::kick_user( User * target_member )
 {
     _members.erase(target_member);
     --_members_count;

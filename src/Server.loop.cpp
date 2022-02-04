@@ -124,8 +124,8 @@ irc::Server::loop( void )
                     }
                     std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
-                    pending_socket_iterator->second._pending_data.pending_recv.append(_main_buffer);
-                    std::cout << "Total pending packet:\n" << pending_socket_iterator->second._pending_data.pending_recv;
+                    pending_socket_iterator->second._pending_data._recv.append(_main_buffer);
+                    std::cout << "Total pending packet:\n" << pending_socket_iterator->second._pending_data._recv;
 
                     cmd_caller(pending_socket_iterator);
                 }
@@ -172,8 +172,8 @@ irc::Server::loop( void )
                     }
                     std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
-                    connected_user_iterator->second->_pending_data.pending_recv.append(_main_buffer);
-                    std::cout << "Total pending packet:\n" << connected_user_iterator->second->_pending_data.pending_recv;
+                    connected_user_iterator->second->_pending_data._recv.append(_main_buffer);
+                    std::cout << "Total pending packet:\n" << connected_user_iterator->second->_pending_data._recv;
 
                     cmd_caller(connected_user_iterator);
                 }
