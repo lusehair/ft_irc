@@ -62,6 +62,7 @@
 # define ERR_ERR_NOTREGISTERED "451"
 # define ERR_NOPRIVILEGES "481"
 # define ERR_NOSUCHNICK "401"
+# define ERR_CHANOPRIVSNEEDED "482"
 
 
 #include "User.hpp"
