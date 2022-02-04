@@ -85,6 +85,14 @@ void    irc::Server::send_header(const User * input_user) const
 }
 
 
+void     irc::Server::disconnect_user(User * target_user)
+{
+        _opened_sockets.erase(target_user->_own_socket);
+        FD_CLR(arget_user->_own_socket, &_client_sockets);
+        close(target_user->_own_socket); 
+        _connected_users.erase(target_user->_nickname);
+} 
+
 size_t    blank_arguments(std::string input_line, const char * cmd)
 {
     (void) input_line;
@@ -294,20 +302,27 @@ void    irc::Server::cmd_pong(const int input_fd, const std::string command_line
 
 void    irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
 {
-    
-
     size_t end = command_line.find(" ", strlen(KILL) + 2); 
     std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
     std::string reason = command_line.substr(end + 1, command_line.end());     
-    if(input_user == NULL || !input_user->_isOperator)
+    
+
+    if(std::count(command_line.begin(), command_line.end(), ' ') < 2)
+    {
+        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
+        return ;
+    }
+
+    else if(input_user == NULL || !input_user->_isOperator)
     {
         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
+        return ; 
     }
-    
+
     std::map<std::string , User * >::iterator user_it = _connected_user.find(killed_user);
     if(user_it == _connected_users.end())
     {
-        
+        send(input_fd, ERR_NOSUCHNICK, strlen(ERR_NOSUCHNICK), 0);
     }
 
     else if(input_user->_isOperator)
@@ -315,9 +330,8 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
         // maybe send another msg to killed user 
         send(input_fd, reason.c_str(), reason.size(), 0);
         // close & delete user method()
-        
+        disconnect_user(user_it);
     }
-
 }
 
 

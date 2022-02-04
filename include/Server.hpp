@@ -60,7 +60,9 @@
 # define ERR_NEEDMOREPARAMS "461"
 # define ERR_ALREADYREGISTRED "462"     
 # define ERR_ERR_NOTREGISTERED "451"
-#define ERR_NOPRIVILEGES "481"
+# define ERR_NOPRIVILEGES "481"
+# define ERR_NOSUCHNICK "401"
+
 
 #include "User.hpp"
 #include "log.hpp"
@@ -148,6 +150,8 @@ namespace irc
                 void cmd_caller( T identifier );
 
             void send_header(const User * input_user) const;
+
+            void disconnect_user(User * target_user); 
 
     };
 
