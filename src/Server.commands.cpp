@@ -1,6 +1,6 @@
 #include "Server.hpp"
 #include "log.hpp"
-
+#include <cstdio>
 void
 irc::Server::init_commands_map( void )
 {
@@ -17,8 +17,10 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
     std::string & received_data = unnamed_user_iterator->second._pending_data._recv;
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
-    while ((endl_pos = received_data.find('\n')) != received_data.npos)
+    while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
+    // for (int i = 0; i < 2; ++i)
     {
+// (endl_pos = received_data.find("\r\n"));
         std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
         std::cout << "|" << command_line << "|\n";
         size_t command_name_end = command_line.find(" ", last_endl_pos);
@@ -32,7 +34,7 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
         {
             (this->*(it->second))(unnamed_user_iterator->first, command_line, NULL);
         }
-        last_endl_pos = endl_pos + 1;
+        last_endl_pos = endl_pos + 2;
     }
     received_data.erase(0, last_endl_pos);
 }
@@ -43,8 +45,10 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
     std::string & received_data = input_user->_pending_data._recv;
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
-    while ((endl_pos = received_data.find('\n')) != received_data.npos)
+    while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
+    // for (int i = 0; i < 2; ++i)
     {
+    // (endl_pos = received_data.find("\r\n"));
         std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
         std::cout << "|" << command_line << "|\n";
         size_t command_name_end = command_line.find(" ", last_endl_pos);
@@ -58,7 +62,7 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
         {
             (this->*(it->second))(input_user->_own_socket, command_line, input_user);
         }
-        last_endl_pos = endl_pos + 1;
+        last_endl_pos = endl_pos + 2;
     }
     received_data.erase(0, last_endl_pos);
 }
@@ -136,8 +140,6 @@ int *    irc::Server::pass_hash(std::string input_pass)
 
 void irc::Server::cmd_pass(const int input_fd, const std::string command_line, User * input_user)
 {
-    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd); 
-
     // loop in all users to see if the socket is already registered
     if(input_user != NULL)
     {
@@ -292,10 +294,13 @@ void    irc::Server::cmd_pong(const int input_fd, const std::string command_line
 
 void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
 {
-    if(input_user == NULL || !input_user->_isOperator)
-    {
-        send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
-    }
+    (void)input_fd;
+    (void)command_line;
+    (void)input_user;
+    // if(input_user == NULL || !input_user->_isOperator)
+    // {
+    //     send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
+    // }
 
 }
 
