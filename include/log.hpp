@@ -93,6 +93,15 @@
 #define LOG_USERCONNECTED(TIME, NICK) _log_file << log_time(TIME) << "s" <<  ": " << NICK << " Is fully connected ! \n"
 
 
+#define LOG_PONGNOREGISTERUSER(TIME, FD) _log_file << log_time(TIME) << "s" << ": Socket number" << FD << ": Try to ping the server without connexion\n"
+#define LOG_PONGUSERPING(TIME, NICK) _log_file << log_time(TIME) << "s" << ": User" << NICK << ": has ping the server\n"
+
+#define LOG_KILLNOREGISTER(TIME, FD) _log_file << log_time(TIME) << "s" << ": Socket number" << FD << ": Try to kill someone without connexion\n"
+#define LOG_KILLWITHOUTPRIV(TIME, NICK) _log_file << log_time(TIME) << "s" << ": User" << NICK << ": Try to kill someone whitout privilege\n" 
+#define LOG_KILLWITHPRIV(TIME, NICK, TARGET) _log_file << log_time(TIME) << "s" << ": User" << NICK << ": Kill " << TARGET << '\n' 
+#define LOG_KILLUKNOWNTARGET(TIME, NICK, TARGET) _log_file << log_time(TIME) << "s" << ": User" << NICK << ": try to kill an uknown user:  " << TARGET << '\n' 
+
+#define LOG_KICKNOREGISTER(TIME, FD) _log_file << log_time(TIME) << "s" << ": Socket number" << FD << ": Try to kick someone without 
 
 
 long    log_time(time_t input_time);  
