@@ -70,37 +70,37 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
 void    irc::Server::send_header(const User * input_user) const
 {
     std::string line = "Hello from server " + input_user->_nickname + '\n'; 
-    // std::ifstream head ("src/head_message"); 
-     int user_socket = input_user->_own_socket; 
+    std::ifstream head ("src/head_message"); 
+    int user_socket = input_user->_own_socket; 
 
-    // if(head.is_open())
-    // {
-    //     while(getline (head, line))
-    //     {
-    //       send(user_socket, line.c_str(), line.size(), 0);  
-    //       line.clear(); 
-    //     }
-    // }
+    if(head.is_open())
+    {
+        while(getline (head, line))
+        {
+          send(user_socket, line.c_str(), line.size(), 0);  
+          line.clear(); 
+        }
+    }
    send(user_socket, line.c_str(), line.size(), 0);
 }
 
 
-bool    blank_arguments(std::string input_line, const char * cmd)
+size_t    blank_arguments(std::string input_line, const char * cmd)
 {
     (void) input_line;
     (void )cmd;
 
-    // for(size_t i = strlen(cmd) + 1 ; input_line.size(); i++)
-    // {
-    //     if(input_line[i] != ' ' )
-    //     {
-    //           std::cout << "INTO THE FOR|" << input_line[i] << '|';
-    //           return false;
-    //     }
+    for(size_t i = strlen(cmd) + 1 ; input_line.size(); i++)
+    {
+        if(input_line[i] != ' ' )
+        {
+              //std::cout << "INTO THE FOR|" << input_line[i] << '|';
+              return i;
+        }
           
-    // }
-    // puts("why is not here");
-    return true;
+    }
+    //puts("why is not here");
+    return 0;
 }
 
 /**
@@ -127,7 +127,7 @@ int *    irc::Server::pass_hash(std::string input_pass)
  * @brief Command PASS from IRC Protocol 
  * 
  * We have 3 cases : 
- * 1. If the users is already register (in unnamed users map, find by target_socket)
+ * 1. If the users is already register (in unnamed users map, find by input_fd)
  * 2. If we have no argument (no argument after "PASS" command)
  * 3. If the pass given by the user doesn't match with the server password.
  * 
@@ -140,61 +140,45 @@ int *    irc::Server::pass_hash(std::string input_pass)
 
 void irc::Server::cmd_pass(const int input_fd, const std::string command_line, User * input_user)
 {
-    const int target_socket = *(reinterpret_cast<int *>(input_fd));
-    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket); 
+    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd); 
 
     // loop in all users to see if the socket is already registered
-    if(unnamed_it == _unnamed_users.end())
+    if(input_user != NULL)
     {
-                puts("blank");
-
-        LOG_PASSTWICE(_raw_start_time, target_socket);
-        send(target_socket, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
+        LOG_PASSTWICE(_raw_start_time, input_fd);
+        send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
         return ;
     }
 
-    std::string input_pass(_main_buffer);
-    // std::string raw_pass; 
-
-    if(blank_arguments(input_pass, PASS))
+    if(!blank_arguments(command_line, PASS))
     {
-        LOG_NOPARAM(_raw_start_time, target_socket, input_pass);
-        send(target_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
+        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ;
-    }
-
-    // input_pass.copy((char*)raw_pass.c_str(), input_pass.size() - 6 , 6);
-    // int *hash_pass = pass_hash((char*)raw_pass.c_str()); 
-    std::string clean_pass = input_pass.substr(strlen(PASS) + 1, input_pass.find('\n') - (strlen(PASS) + 1)); 
+    }   
+    
+    std::string clean_pass = command_line.substr(strlen(PASS) + 1); 
     int *hash_pass = pass_hash(clean_pass); 
-
-    std::cout << "client string to compare: |" << clean_pass << "|" << "the len of pass" << clean_pass.size() << std::endl; 
-
-
     for(unsigned long i = 0; i < clean_pass.size(); i++)
     {
-        std::cout << "client hash : " << hash_pass[i] << " the hash pass : " << _password[i] << std::endl; 
         if(hash_pass[i] != _password[i])
         {
-            
-            puts("here");
             delete (hash_pass);
-            LOG_PASSFAILED(_raw_start_time, target_socket); 
-            _unnamed_users.erase(target_socket);
-            _opened_sockets.erase(target_socket);
-            FD_CLR(target_socket, &_client_sockets);
-            close(target_socket);
+            LOG_PASSFAILED(_raw_start_time, input_fd); 
+            _unnamed_users.erase(input_fd);
+            _opened_sockets.erase(input_fd);
+            FD_CLR(input_fd, &_client_sockets);
+            close(input_fd);
             return ;
         }
-        _unnamed_users[target_socket].pass_check = true;
+        _unnamed_users[input_fd].pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
         LOG_PASSSUCCESS(_raw_start_time, input_fd); 
     }
     
-    //print_pass(input_pass); 
 
-    // _unnamed_users.insert(make_pair(target_socket, "")); 
+    // _unnamed_users.insert(make_pair(input_fd, "")); 
     // delete(hash_pass); 
 }
 
@@ -207,43 +191,34 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
  * 2. If the User have the same nickname to another, kick the two user 
  * 3. If it's a new user, we put the nickname in unnamed_users map. 
  * 4. If the nickname is not in the block_list
- * the void* is cast into a target_socket (int)
+ * the void* is cast into a input_fd (int)
  * 
  * @param void* input_socket 
  *@sa RFC 2812 (3.1.2)
  */
 void irc::Server::cmd_nick(const int input_fd, const std::string command_line, User * input_user)
 {
-    const int target_socket = *(reinterpret_cast<int*>(input_socket)); 
-
-    std::string input_nick(_main_buffer);
-    std::string nick = input_nick.substr(strlen(NICK) + 1); // segfault??
-    // std::size_t found = tmp.find(NICK) + 4;
-
-    // tmp.copy((char*)nick.c_str(), tmp.size() - found , found);
-
-    // need to check if nickname is ban
-
-    std::map<std::string, irc::User *>::iterator connected_it = _connected_users.find(nick);
-    if (connected_it != _connected_users.end())
+    if(!blank_arguments(command_line, NICK))
     {
-        if(connected_it->second->_own_socket == target_socket) 
+        // err arg
+        return;
+    }
+    std::string nick = command_line.substr(strlen(NICK) + 1); // segfault?
+    if (input_user != NULL)
+    {
+        if(input_user->_own_socket == input_fd) 
         {
-            User * tmp = connected_it->second; 
-            _connected_users.erase(connected_it->second->_nickname); 
+            User * tmp = input_user;
+            _connected_users.erase(input_user->_nickname); 
             // LOG NICK [tmp->nick] change his nickname for nick
-            LOG_NICKCHANGE(_raw_start_time, tmp->_nickname, nick); 
-            tmp->_nickname = nick; 
+            LOG_NICKCHANGE(_raw_start_time, tmp->_nickname, nick);
+            tmp->_nickname = nick;
             _connected_users.insert(std::make_pair(nick, tmp));
-            
             // REPLY TO CLIENT??
         }
         else 
         {
-            // LOG NICK ERROR[SOCKET] the nickname [nick] is already taken
-            LOG_NICKTAKEN(_raw_start_time,connected_it->second->_nickname, nick); 
-            // SENT ERR MSG IF qui dit que le nickname est deja pris
-            // que fait-on si deja pris et pas toi
+            LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick); 
         }
         return ;
     }
@@ -251,7 +226,7 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
     // LOG NICK [FD] : Connected to the server has [NICKNAME] nickname
     LOG_NICKREGISTER(_raw_start_time, nick);
 
-    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket);
+    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
     unnamed_it->second.nick_name = nick;
 }
 
@@ -269,58 +244,41 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
  */
 void irc::Server::cmd_user(const int input_fd, const std::string command_line, User * input_user)
 {
-    const int target_socket = *(reinterpret_cast<int*>(input_socket));
 
     std::string tmp(_main_buffer);
-    // just need to check if enought spaces and ":" char 
-    // first word after USER cmd use the substr like the previous method 
-    // Need to store the real name, find + 1 with end.
-
-
-
-
-    std::size_t start = 5; // username start
+   
+    std::size_t start = blank_arguments(command_line, USER); // username start
     std::size_t end = tmp.find(' ', start); // username end
     std::size_t nb_of_space = std::count(tmp.begin(), tmp.end(), ' ');
 
-    if(nb_of_space < 4 || tmp.find(':') == std::string::npos)
+    if((nb_of_space < 4 || tmp.find(':') == std::string::npos) || !blank_arguments(command_line, USER))
     {
         // LOG USER ERROR [Nick] : Bad request no paramater
-        LOG_NOPARAM(_raw_start_time, target_socket, tmp);
-        send(target_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
+        LOG_NOPARAM(_raw_start_time, input_fd, tmp);
+        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ; 
     }
 
-
     std::string username = tmp.substr(5, end - start);
-    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(target_socket);
+    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
 
-    if(unnamed_it != _unnamed_users.end())
+    if(input_user != NULL || (unnamed_it != _unnamed_users.end()))
     {
-        std::map<std::string, User *>::iterator check_even_connected_it = _connected_users.find(unnamed_it->second.nick_name); 
-        if(check_even_connected_it != _connected_users.end())
-        {
             // LOG USER ERROR [Nick] : [USERNAME] is already taken
             LOG_USERTAKEN(_raw_start_time, unnamed_it->second.nick_name, username); 
-            send(target_socket, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
+            send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
             return ;
-        }
-        else if (unnamed_it->second.nick_name.size() != 0)
-        {
+    }
+    
+    else if (unnamed_it->second.nick_name.size() != 0)
+    {
             User * new_user = new User(unnamed_it->second.nick_name, username, unnamed_it->first); 
             _connected_users.insert(std::make_pair(unnamed_it->second.nick_name, new_user)); 
-            _unnamed_users.erase(target_socket); 
+            _unnamed_users.erase(input_fd); 
             send_header(new_user);
             // LOG USER : [NICKNAME] is connected to the server 
-            LOG_USERCONNECTED(_raw_start_time, unnamed_it->second.nick_name); 
-        }
-
-        
-        // else if(connected_it->second.nick_name.size() != 0)
-        // {
-        //     _connected_users.insert(User(_connected_it->second, username, target_socket));
-        //     _unnamed_users.erase(target_socket);
-        //     //need to set a private function for sending message (Header etc ...)
-        // }
+            LOG_USERCONNECTED(_raw_start_time, unnamed_it->second.nick_name);
+    }
+    
     }
 }
