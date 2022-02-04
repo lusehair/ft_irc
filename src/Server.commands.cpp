@@ -245,21 +245,20 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
 void irc::Server::cmd_user(const int input_fd, const std::string command_line, User * input_user)
 {
 
-    std::string tmp(_main_buffer);
    
     std::size_t start = blank_arguments(command_line, USER); // username start
-    std::size_t end = tmp.find(' ', start); // username end
-    std::size_t nb_of_space = std::count(tmp.begin(), tmp.end(), ' ');
+    std::size_t end = command_line.find(' ', start); // username end
+    std::size_t nb_of_space = std::count(command_line.begin(), command_line.end(), ' ');
 
-    if((nb_of_space < 4 || tmp.find(':') == std::string::npos) || !blank_arguments(command_line, USER))
+    if((nb_of_space < 4 || command_line.find(':') == std::string::npos) || !blank_arguments(command_line, USER))
     {
         // LOG USER ERROR [Nick] : Bad request no paramater
-        LOG_NOPARAM(_raw_start_time, input_fd, tmp);
+        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ; 
     }
 
-    std::string username = tmp.substr(5, end - start);
+    std::string username = command_line.substr(5, end - start);
     std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
 
     if(input_user != NULL || (unnamed_it != _unnamed_users.end()))
@@ -280,5 +279,27 @@ void irc::Server::cmd_user(const int input_fd, const std::string command_line, U
             LOG_USERCONNECTED(_raw_start_time, unnamed_it->second.nick_name);
     }
     
-    }
 }
+
+void    irc::Server::cmd_pong(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
+
+    }
+    std::string ret = command_line; 
+    ret.replace(1,1,"O"); 
+    send(input_fd, ret.c_str(), ret.size(),0);
+}
+
+
+void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL || !input_user->_isOperator)
+    {
+        send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
+    }
+
+}
+
