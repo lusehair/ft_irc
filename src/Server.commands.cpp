@@ -87,9 +87,11 @@ void    irc::Server::send_header(const User * input_user) const
 
 void     irc::Server::disconnect_user(User * target_user)
 {
+        std::string tmp_nick = target_user->_nickname; 
         _opened_sockets.erase(target_user->_own_socket);
         FD_CLR(arget_user->_own_socket, &_client_sockets);
         close(target_user->_own_socket); 
+        delete(target_user);
         _connected_users.erase(target_user->_nickname);
 } 
 
@@ -291,11 +293,13 @@ void    irc::Server::cmd_pong(const int input_fd, const std::string command_line
 {
     if(input_user == NULL)
     {
+        LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
         send(input_fd, ERR_ERR_NOTREGISTERED, strlen(ERR_ERR_NOTREGISTERED), 0); 
 
     }
     std::string ret = command_line; 
     ret.replace(1,1,"O"); 
+    LOG_PONGUSERPING(_raw_start_time, input_user->_nickname);
     send(input_fd, ret.c_str(), ret.size(),0);
 }
 
@@ -306,27 +310,40 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
     std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
     std::string reason = command_line.substr(end + 1, command_line.end());     
     
-
-    if(std::count(command_line.begin(), command_line.end(), ' ') < 2)
+    if(input_user == NULL)
     {
-        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
-        return ;
-    }
-
-    else if(input_user == NULL || !input_user->_isOperator)
-    {
+        LOG_KILLNOREGISTER(_raw_start_time, input_fd);
         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
         return ; 
     }
 
+    else if(!input_user->_isOperator)
+    {
+        LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
+        send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
+        return ; 
+    }
+
+    else if(std::count(command_line.begin(), command_line.end(), ' ') < 2)
+    {
+        
+        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
+        return ;
+    }
+
+    
+
     std::map<std::string , User * >::iterator user_it = _connected_user.find(killed_user);
     if(user_it == _connected_users.end())
     {
+        LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, killed_user);
         send(input_fd, ERR_NOSUCHNICK, strlen(ERR_NOSUCHNICK), 0);
     }
 
     else if(input_user->_isOperator)
     {
+        LOG_KILLWITHPRIV(_raw_start_time, input_user->_nickname, killed_user);
         // maybe send another msg to killed user 
         send(input_fd, reason.c_str(), reason.size(), 0);
         // close & delete user method()
@@ -334,5 +351,16 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
     }
 }
 
+void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        LOG_KICKNOREGISTER(_raw_start_time, input_fd);
+        send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
+        return ;
+    }
+    // Check if user is an OP in 
+
+}
 
 
