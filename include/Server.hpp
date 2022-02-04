@@ -58,6 +58,8 @@
 
 # define ERR_NEEDMOREPARAMS "461"
 # define ERR_ALREADYREGISTRED "462"     
+# define ERR_ERR_NOTREGISTERED "451"
+#define ERR_NOPRIVILEGES "481"
 
 #include "User.hpp"
 #include "log.hpp"
@@ -137,6 +139,9 @@ namespace irc
             void cmd_pass( const int input_socket, const std::string command_line, User * input_user);
             void cmd_nick( const int input_socket, const std::string command_line, User * input_user);
             void cmd_user( const int input_socket, const std::string command_line, User * input_user);
+            void cmd_pong( const int input_socket, const std::string command_line, User * input_user); 
+            void cmd_kick( const int input_socket, const std::string command_line, User * input_user);
+
 
             template < typename T >
                 void cmd_caller( T identifier );
