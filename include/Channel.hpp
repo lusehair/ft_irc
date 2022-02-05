@@ -19,6 +19,7 @@ namespace irc
         private:
             std::map<irc::User *, const bool>   _members;
             const std::string                   _name;
+            std::string                         _topic;
             int                                 _members_count;
 
             Channel();

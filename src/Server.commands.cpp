@@ -1,5 +1,6 @@
 #include "Server.hpp"
 #include "log.hpp"
+#include "Channel.hpp"
 #include <cstdio>
 void
 irc::Server::init_commands_map( void )
@@ -294,7 +295,7 @@ void    irc::Server::cmd_pong(const int input_fd, const std::string command_line
     if(input_user == NULL)
     {
         LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
-        send(input_fd, ERR_ERR_NOTREGISTERED, strlen(ERR_ERR_NOTREGISTERED), 0); 
+        send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
 
     }
     std::string ret = command_line; 
@@ -308,7 +309,7 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
 {
     size_t end = command_line.find(" ", strlen(KILL) + 2); 
     std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
-    std::string reason = command_line.substr(end + 1, command_line.end());     
+    std::string reason = command_line.substr(end + 1, command_line.size() - end);     
     
     if(input_user == NULL)
     {
@@ -350,6 +351,97 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
         disconnect_user(user_it);
     }
 }
+
+
+
+void    irc::Server::cmd_quit(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return ;
+    }
+    else if(command_line.size() == strlen(QUIT) + 1)
+    {
+        // send message at all user in the chan "user input_user->_nickame has left"
+        disconnect_user(input_user); 
+        return ;
+    }
+    
+    std::string quit_message = command_line.substr(strlen(QUIT) + 1, command_line.size() - strlen(QUIT) + 1); 
+    // send at all users in the chan "user input_user->nickname has left : [quit_message]"
+}
+
+
+void    irc::Server::cmd_list(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0);
+        return ; 
+    }
+    
+    send(input_fd, RPL_LISTSTART, strlen(RPL_LISTSTART), 0);
+    if(command_line.find("#") == std::string::npos)
+    {
+        std::string ret_list; 
+        for(std::set<void *>::iterator chan_it = _running_channels.begin(); chan_it != chan_it.end() ; chan_it++)
+        {
+           ret_list = chan_it->_name; 
+           ret_list+= " "; 
+           ret_list+= chan_it->_members_count;
+
+           if(!chan_it->_topic.empty)
+           {
+               ret_list+= " "; 
+               ret_list+= chan_it->_topic;
+           }
+           ret_list+= '\n';
+           send(input_fd, ret_list.c_str(), ret_list.size(), 0);
+           ret_list.clear();
+        }
+        return; 
+
+    }
+    
+    else
+    {
+        size_t pos = 0;  
+        size_t chan_iterate;
+        std::string requiere_chan; 
+        size_t end; 
+        std::set<std::string>::iterator chan_it;
+        std::string ret_list;
+
+        while((chan_iterate = command_line.find_first_of("#", pos)) != std::string::npos)
+        {
+            end = command_line.find_first_of(" ", chan_iterate); 
+            requiere_chan = command_line.substr(chan_iterate, end - chan_iterate); 
+            chan_it = _running_channels.find(requiere_chan); 
+            
+            if(chan_it != _running_channels.end())
+            {
+                ret_list = chan_it->_name; 
+                ret_list+= " "; 
+                ret_list+= chan_it->_members_count;
+
+                if(!chan_it->_topic.empty)
+                {
+                    ret_list+= " "; 
+                    ret_list+= chan->it_topic;
+                }
+
+                ret_list+= '\n';
+                send(input_fd, ret_list.c_str(), ret_list.size(), 0);
+                ret_list.clear();
+            }
+
+            pos = chan_iterate + 1; 
+            requiere_chan.clear(); 
+        }
+    }
+    send(input_fd, RPL_LISTEND, strlen(RPL_LISTEND), 0);
+}
+
 
 void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
 {
@@ -420,5 +512,7 @@ void    irc::Server::cmd_join(const int input_fd, const std::string command_line
 
     else if()
 }
+
+
 
 
