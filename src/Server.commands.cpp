@@ -324,7 +324,7 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
         return ; 
     }
 
-    else if(std::count(command_line.begin(), command_line.end(), ' ') < 2)
+    else if(std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
     {
         
         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
@@ -334,7 +334,7 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
 
     
 
-    std::map<std::string , User * >::iterator user_it = _connected_user.find(killed_user);
+    std::map<std::string , User * >::iterator user_it = _connected_users.find(killed_user);
     if(user_it == _connected_users.end())
     {
         LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, killed_user);
@@ -353,14 +353,72 @@ void    irc::Server::cmd_kill(const int input_fd, const std::string command_line
 
 void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
 {
-    if(input_user == NULL)
+    if (input_user == NULL)
     {
         LOG_KICKNOREGISTER(_raw_start_time, input_fd);
         send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
         return ;
     }
-    // Check if user is an OP in 
+    
 
+    else if (std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
+    {
+        
+        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
+        return ;
+    }
+    
+    size_t start = strlen(KICK) + 2; 
+    size_t end = command_line.find(' ',strlen(KICK) + 2); 
+    std::string channel_target = command_line.substr(start, end  - (start -1));    
+    start = end + 1; 
+    
+    if(std::count(command_line.begin(), command_line.end(), ' ') > 2)
+    {
+        end = command_line.find(' ',strlen(KICK) + 2);
+    }
+    
+    else
+    {
+        end = command_line.size();
+    }
+    std::string user_target = command_line.substr(start, end - start);
+
+
+    if(/* the chan doesn't exist */)
+    {
+        LOG_KICKUKNOWNCHAN(_raw_start_time, input_user->_nickname, channel_target);
+        send(input_fd, ERR_NOSUCHCHANNEL, strlen(ERR_NOSUCHCHANNEL), 0); 
+        return ;
+    }
+    else if(/* the target_user is not in the chan*/)
+    {
+        LOG_KICKNOTONTHECHAN(_raw_start_time, input_user->_nickname, user_target, channel_target); 
+        send(input_fd, ERR_NOTONCHANNEL, strlen(ERR_NOTONCHANNEL), 0); 
+        return ;
+    }
+    else if(/* the user doesn't have the op access to kick someone*/)
+    {
+        LOG_KICKWITHOUTOP(_raw_start_time, input_user->_nickname, channel_target); 
+        send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
+        return ;
+    }
+    else 
+    {
+        // KICK THE USER 
+    }
+}
+
+
+void    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        // DO Something
+    }
+
+    else if()
 }
 
 

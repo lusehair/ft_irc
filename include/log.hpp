@@ -101,8 +101,10 @@
 #define LOG_KILLWITHPRIV(TIME, NICK, TARGET) _log_file << log_time(TIME) << "s" << ": User" << NICK << ": Kill " << TARGET << '\n' 
 #define LOG_KILLUKNOWNTARGET(TIME, NICK, TARGET) _log_file << log_time(TIME) << "s" << ": User" << NICK << ": try to kill an uknown user:  " << TARGET << '\n' 
 
-#define LOG_KICKNOREGISTER(TIME, FD) _log_file << log_time(TIME) << "s" << ": Socket number" << FD << ": Try to kick someone without 
-
+#define LOG_KICKNOREGISTER(TIME, FD) _log_file << log_time(TIME) << "s" << ": Socket number" << FD << ": Try to kick someone without registration\n"
+#define LOG_KICKUKNOWNCHAN(TIME, USER, CHAN) _log_file << log_time(TIME) << "s" << "User: " << USER << "try to kick someone in a uknown channel: " << CHAN << '\n'
+#define LOG_KICKNOTONTHECHAN(TIME, USER,TARGET, CHAN) _log_file << log_time(TIME) << "s" << "User: " << USER << " try to kick " << TARGET << " is not in the channel: " << CHAN << '\n'
+#define LOG_KICKWITHOUTOP(TIME, USER, CHAN) _log_file << log_time(TIME) << "s" << " User: " << USER << "try to kick someone whithout operator access in the channel: " << CHAN << '\n' 
 
 long    log_time(time_t input_time);  
 
