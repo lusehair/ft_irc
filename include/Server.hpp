@@ -148,7 +148,7 @@ namespace irc
             void cmd_pong( const int input_socket, const std::string command_line, User * input_user); 
             void cmd_kill( const int input_socket, const std::string command_line, User * input_user);
             void cmd_kick( const int input_socket, const std::string command_line, User * input_user);
-
+            void cmd_join( const int input_socket, const std::string command_line, User * input_user);
 
 
             template < typename T >
