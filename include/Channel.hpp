@@ -41,14 +41,16 @@ namespace irc
 irc::Channel::Channel( const User * channel_operator, const std::string channel_name )
     : _name(channel_name)
 {
-    _members.insert(std::make_pair(channel_operator, true));
+    (void)channel_operator;
+    // _members.insert(std::make_pair(channel_operator, true));
     ++_members_count;
 }
 
 void
 irc::Channel::add_user( const User * new_member )
 {
-    _members.insert(std::make_pair(new_member, false));
+    (void)new_member;
+    // _members.insert(std::make_pair(new_member, false));
     ++_members_count;
 }
 

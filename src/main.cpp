@@ -1,6 +1,13 @@
 #include "Server.hpp"
+// signal(), SIGINT
+#include <csignal>
 
 std::map<const std::string, irc::Server::command_function>    irc::Server::_commands;
+
+void sig_handle( int sig_number )
+{
+    std::cout << "\nSignal n'" << sig_number << ". Programm closing\n";
+}
 
 int main(int ac, char **av)
 {
@@ -20,6 +27,8 @@ int main(int ac, char **av)
         std::cerr << e.what();
         return (EXIT_FAILURE);
     }
+
+    signal(SIGINT, sig_handle);
 
     main_server->loop();
 

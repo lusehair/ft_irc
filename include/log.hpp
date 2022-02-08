@@ -17,7 +17,7 @@
 
 //#define TRYBIDINGSOCKET  "Try to bind : " // after
 
-#define LOG_TRYBIDINGSOCKET(TIME, LISTEN_SOCKET) _log_file << log_time(TIME) << "s: Try to bind Socket number:" << LISTEN_SOCKET << '\n'
+#define LOG_TRYBIDINGSOCKET(TIME, LISTEN_SOCKET) _log_file << log_time(TIME) << "s: Try to bind Socket number: " << LISTEN_SOCKET << '\n'
 
 //#define LOG_INVALIDSOCKET  "cannot bind : invalid socket : " // after 
 
@@ -35,16 +35,16 @@
 //#define BINDSUCCESS " bind with succesful\n"; //before 
 
 
-#define LOG_BINDSUCCESS(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: the server has bind " << LISTEN_SOCKET << " with success\n"
+#define LOG_BINDSUCCESS(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: server has bind " << LISTEN_SOCKET << " with success\n"
 
 //#define LISTENFAILED "cannot listen the socket :"  //after 
 
-#define LOG_LISTENFAILED(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: the server cannot listen on " << LISTEN_SOCKET << '\n'
+#define LOG_LISTENFAILED(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: server cannot listen on " << LISTEN_SOCKET << '\n'
 
 
-#define LOG_TRYLISTENING(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: the server try to listen on " << LISTEN_SOCKET << '\n'
+#define LOG_TRYLISTENING(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: server try to listen on " << LISTEN_SOCKET << '\n'
 
-#define LOG_LISTENSUCCESS(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: the server listening on " << LISTEN_SOCKET << " with success !\n"
+#define LOG_LISTENSUCCESS(TIME, LISTEN_SOCKET) _log_file  << log_time(TIME) << "s: server listening on " << LISTEN_SOCKET << " with success !\n"
 
 
 

@@ -19,17 +19,20 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
     while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
-    // for (int i = 0; i < 2; ++i)
+    // for (int i = 0; i < 3; ++i)
     {
-// (endl_pos = received_data.find("\r\n"));
+// (endl_pos = received_data.find("\r\n", last_endl_pos));
         std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
         std::cout << "|" << command_line << "|\n";
-        size_t command_name_end = command_line.find(" ", last_endl_pos);
-        if (command_name_end != command_line.npos && !(command_name_end < endl_pos))
+        std::cout << "____" << static_cast<int>(received_data[endl_pos]) << "____\n";
+        std::cout << "____" << static_cast<int>(received_data[endl_pos + 1]) << "____\n";
+        std::cout << "lastendl = " << last_endl_pos << " endlpos = " << endl_pos << "\n";
+        size_t command_name_end = command_line.find(" ");
+        if (command_name_end == command_line.npos || (command_name_end != command_line.npos && !(command_name_end < endl_pos)))
         {
             command_name_end = endl_pos;
-        } 
-        std::string command_name = command_line.substr(last_endl_pos, command_name_end - last_endl_pos);
+        }
+        std::string command_name = command_line.substr(0, command_name_end);
         std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name);
         if (it != irc::Server::_commands.end())
         {
@@ -52,12 +55,12 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
     // (endl_pos = received_data.find("\r\n"));
         std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
         std::cout << "|" << command_line << "|\n";
-        size_t command_name_end = command_line.find(" ", last_endl_pos);
-        if (command_name_end != command_line.npos && !(command_name_end < endl_pos))
+        size_t command_name_end = command_line.find(" ");
+        if (command_name_end == command_line.npos || (command_name_end != command_line.npos && !(command_name_end < endl_pos)))
         {
             command_name_end = endl_pos;
         } 
-        std::string command_name = command_line.substr(last_endl_pos, command_name_end - last_endl_pos);
+        std::string command_name = command_line.substr(0, command_name_end);
         std::map<const std::string, command_function>::iterator it = (irc::Server::_commands).find(command_name);
         if (it != irc::Server::_commands.end())
         {
@@ -90,7 +93,7 @@ void     irc::Server::disconnect_user(User * target_user)
 {
         std::string tmp_nick = target_user->_nickname; 
         _opened_sockets.erase(target_user->_own_socket);
-        FD_CLR(arget_user->_own_socket, &_client_sockets);
+        FD_CLR(target_user->_own_socket, &_client_sockets);
         close(target_user->_own_socket); 
         delete(target_user);
         _connected_users.erase(target_user->_nickname);
@@ -197,12 +200,11 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
  * 
  * We have 4 cases 
  * 1. If User want changes his nickname to an another (same FD)
- * 2. If the User have the same nickname to another, kick the two user 
- * 3. If it's a new user, we put the nickname in unnamed_users map. 
+ * 2. If the User have the same nickname as another, kick the two users
+ * 3. If it's a new user, we put the nickname in unnamed_users map.
  * 4. If the nickname is not in the block_list
- * the void* is cast into a input_fd (int)
  * 
- * @param void* input_socket 
+ * @param const int input_socket 
  *@sa RFC 2812 (3.1.2)
  */
 void irc::Server::cmd_nick(const int input_fd, const std::string command_line, User * input_user)
@@ -290,228 +292,228 @@ void irc::Server::cmd_user(const int input_fd, const std::string command_line, U
     
 }
 
-void    irc::Server::cmd_pong(const int input_fd, const std::string command_line, User * input_user)
-{
-    if(input_user == NULL)
-    {
-        LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
-        send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
+// void    irc::Server::cmd_pong(const int input_fd, const std::string command_line, User * input_user)
+// {
+//     if(input_user == NULL)
+//     {
+//         LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
+//         send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
 
-    }
-    std::string ret = command_line; 
-    ret.replace(1,1,"O"); 
-    LOG_PONGUSERPING(_raw_start_time, input_user->_nickname);
-    send(input_fd, ret.c_str(), ret.size(),0);
-}
+//     }
+//     std::string ret = command_line; 
+//     ret.replace(1,1,"O"); 
+//     LOG_PONGUSERPING(_raw_start_time, input_user->_nickname);
+//     send(input_fd, ret.c_str(), ret.size(),0);
+// }
 
 
-void    irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
-{
-    size_t end = command_line.find(" ", strlen(KILL) + 2); 
-    std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
-    std::string reason = command_line.substr(end + 1, command_line.size() - end);     
+// void    irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
+// {
+//     size_t end = command_line.find(" ", strlen(KILL) + 2); 
+//     std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
+//     std::string reason = command_line.substr(end + 1, command_line.size() - end);     
     
-    if(input_user == NULL)
-    {
-        LOG_KILLNOREGISTER(_raw_start_time, input_fd);
-        send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
-        return ; 
-    }
+//     if(input_user == NULL)
+//     {
+//         LOG_KILLNOREGISTER(_raw_start_time, input_fd);
+//         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
+//         return ; 
+//     }
 
-    else if(!input_user->_isOperator)
-    {
-        LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
-        send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
-        return ; 
-    }
+//     else if(!input_user->_isOperator)
+//     {
+//         LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
+//         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
+//         return ; 
+//     }
 
-    else if(std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
-    {
+//     else if(std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
+//     {
         
-        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
-        return ;
-    }
+//         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+//         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
+//         return ;
+//     }
 
     
 
-    std::map<std::string , User * >::iterator user_it = _connected_users.find(killed_user);
-    if(user_it == _connected_users.end())
-    {
-        LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, killed_user);
-        send(input_fd, ERR_NOSUCHNICK, strlen(ERR_NOSUCHNICK), 0);
-    }
+//     std::map<std::string , User * >::iterator user_it = _connected_users.find(killed_user);
+//     if(user_it == _connected_users.end())
+//     {
+//         LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, killed_user);
+//         send(input_fd, ERR_NOSUCHNICK, strlen(ERR_NOSUCHNICK), 0);
+//     }
 
-    else if(input_user->_isOperator)
-    {
-        LOG_KILLWITHPRIV(_raw_start_time, input_user->_nickname, killed_user);
-        // maybe send another msg to killed user 
-        send(input_fd, reason.c_str(), reason.size(), 0);
-        // close & delete user method()
-        disconnect_user(user_it);
-    }
-}
+//     else if(input_user->_isOperator)
+//     {
+//         LOG_KILLWITHPRIV(_raw_start_time, input_user->_nickname, killed_user);
+//         // maybe send another msg to killed user 
+//         send(input_fd, reason.c_str(), reason.size(), 0);
+//         // close & delete user method()
+//         disconnect_user(user_it);
+//     }
+// }
 
 
 
-void    irc::Server::cmd_quit(const int input_fd, const std::string command_line, User * input_user)
-{
-    if(input_user == NULL)
-    {
-        return ;
-    }
-    else if(command_line.size() == strlen(QUIT) + 1)
-    {
-        // send message at all user in the chan "user input_user->_nickame has left"
-        disconnect_user(input_user); 
-        return ;
-    }
+// void    irc::Server::cmd_quit(const int input_fd, const std::string command_line, User * input_user)
+// {
+//     if(input_user == NULL)
+//     {
+//         return ;
+//     }
+//     else if(command_line.size() == strlen(QUIT) + 1)
+//     {
+//         // send message at all user in the chan "user input_user->_nickame has left"
+//         disconnect_user(input_user); 
+//         return ;
+//     }
     
-    std::string quit_message = command_line.substr(strlen(QUIT) + 1, command_line.size() - strlen(QUIT) + 1); 
-    // send at all users in the chan "user input_user->nickname has left : [quit_message]"
-}
+//     std::string quit_message = command_line.substr(strlen(QUIT) + 1, command_line.size() - strlen(QUIT) + 1); 
+//     // send at all users in the chan "user input_user->nickname has left : [quit_message]"
+// }
 
 
-void    irc::Server::cmd_list(const int input_fd, const std::string command_line, User * input_user)
-{
-    if(input_user == NULL)
-    {
-        send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0);
-        return ; 
-    }
+// void    irc::Server::cmd_list(const int input_fd, const std::string command_line, User * input_user)
+// {
+//     if(input_user == NULL)
+//     {
+//         send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0);
+//         return ; 
+//     }
     
-    send(input_fd, RPL_LISTSTART, strlen(RPL_LISTSTART), 0);
-    if(command_line.find("#") == std::string::npos)
-    {
-        std::string ret_list; 
-        for(std::set<void *>::iterator chan_it = _running_channels.begin(); chan_it != chan_it.end() ; chan_it++)
-        {
-           ret_list = chan_it->_name; 
-           ret_list+= " "; 
-           ret_list+= chan_it->_members_count;
+//     send(input_fd, RPL_LISTSTART, strlen(RPL_LISTSTART), 0);
+//     if(command_line.find("#") == std::string::npos)
+//     {
+//         std::string ret_list; 
+//         for(std::set<void *>::iterator chan_it = _running_channels.begin(); chan_it != chan_it.end() ; chan_it++)
+//         {
+//            ret_list = chan_it->_name; 
+//            ret_list+= " "; 
+//            ret_list+= chan_it->_members_count;
 
-           if(!chan_it->_topic.empty)
-           {
-               ret_list+= " "; 
-               ret_list+= chan_it->_topic;
-           }
-           ret_list+= '\n';
-           send(input_fd, ret_list.c_str(), ret_list.size(), 0);
-           ret_list.clear();
-        }
-        return; 
+//            if(!chan_it->_topic.empty)
+//            {
+//                ret_list+= " "; 
+//                ret_list+= chan_it->_topic;
+//            }
+//            ret_list+= '\n';
+//            send(input_fd, ret_list.c_str(), ret_list.size(), 0);
+//            ret_list.clear();
+//         }
+//         return; 
 
-    }
+//     }
     
-    else
-    {
-        size_t pos = 0;  
-        size_t chan_iterate;
-        std::string requiere_chan; 
-        size_t end; 
-        std::set<std::string>::iterator chan_it;
-        std::string ret_list;
+//     else
+//     {
+//         size_t pos = 0;  
+//         size_t chan_iterate;
+//         std::string requiere_chan; 
+//         size_t end; 
+//         std::set<std::string>::iterator chan_it;
+//         std::string ret_list;
 
-        while((chan_iterate = command_line.find_first_of("#", pos)) != std::string::npos)
-        {
-            end = command_line.find_first_of(" ", chan_iterate); 
-            requiere_chan = command_line.substr(chan_iterate, end - chan_iterate); 
-            chan_it = _running_channels.find(requiere_chan); 
+//         while((chan_iterate = command_line.find_first_of("#", pos)) != std::string::npos)
+//         {
+//             end = command_line.find_first_of(" ", chan_iterate); 
+//             requiere_chan = command_line.substr(chan_iterate, end - chan_iterate); 
+//             chan_it = _running_channels.find(requiere_chan); 
             
-            if(chan_it != _running_channels.end())
-            {
-                ret_list = chan_it->_name; 
-                ret_list+= " "; 
-                ret_list+= chan_it->_members_count;
+//             if(chan_it != _running_channels.end())
+//             {
+//                 ret_list = chan_it->_name; 
+//                 ret_list+= " "; 
+//                 ret_list+= chan_it->_members_count;
 
-                if(!chan_it->_topic.empty)
-                {
-                    ret_list+= " "; 
-                    ret_list+= chan->it_topic;
-                }
+//                 if(!chan_it->_topic.empty)
+//                 {
+//                     ret_list+= " "; 
+//                     ret_list+= chan->it_topic;
+//                 }
 
-                ret_list+= '\n';
-                send(input_fd, ret_list.c_str(), ret_list.size(), 0);
-                ret_list.clear();
-            }
+//                 ret_list+= '\n';
+//                 send(input_fd, ret_list.c_str(), ret_list.size(), 0);
+//                 ret_list.clear();
+//             }
 
-            pos = chan_iterate + 1; 
-            requiere_chan.clear(); 
-        }
-    }
-    send(input_fd, RPL_LISTEND, strlen(RPL_LISTEND), 0);
-}
+//             pos = chan_iterate + 1; 
+//             requiere_chan.clear(); 
+//         }
+//     }
+//     send(input_fd, RPL_LISTEND, strlen(RPL_LISTEND), 0);
+// }
 
 
-void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
-{
-    if (input_user == NULL)
-    {
-        LOG_KICKNOREGISTER(_raw_start_time, input_fd);
-        send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
-        return ;
-    }
+// void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
+// {
+//     if (input_user == NULL)
+//     {
+//         LOG_KICKNOREGISTER(_raw_start_time, input_fd);
+//         send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
+//         return ;
+//     }
     
 
-    else if (std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
-    {
+//     else if (std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
+//     {
         
-        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
-        return ;
-    }
+//         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+//         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
+//         return ;
+//     }
     
-    size_t start = strlen(KICK) + 2; 
-    size_t end = command_line.find(' ',strlen(KICK) + 2); 
-    std::string channel_target = command_line.substr(start, end  - (start -1));    
-    start = end + 1; 
+//     size_t start = strlen(KICK) + 2; 
+//     size_t end = command_line.find(' ',strlen(KICK) + 2); 
+//     std::string channel_target = command_line.substr(start, end  - (start -1));    
+//     start = end + 1; 
     
-    if(std::count(command_line.begin(), command_line.end(), ' ') > 2)
-    {
-        end = command_line.find(' ',strlen(KICK) + 2);
-    }
+//     if(std::count(command_line.begin(), command_line.end(), ' ') > 2)
+//     {
+//         end = command_line.find(' ',strlen(KICK) + 2);
+//     }
     
-    else
-    {
-        end = command_line.size();
-    }
-    std::string user_target = command_line.substr(start, end - start);
+//     else
+//     {
+//         end = command_line.size();
+//     }
+//     std::string user_target = command_line.substr(start, end - start);
 
 
-    if(/* the chan doesn't exist */)
-    {
-        LOG_KICKUKNOWNCHAN(_raw_start_time, input_user->_nickname, channel_target);
-        send(input_fd, ERR_NOSUCHCHANNEL, strlen(ERR_NOSUCHCHANNEL), 0); 
-        return ;
-    }
-    else if(/* the target_user is not in the chan*/)
-    {
-        LOG_KICKNOTONTHECHAN(_raw_start_time, input_user->_nickname, user_target, channel_target); 
-        send(input_fd, ERR_NOTONCHANNEL, strlen(ERR_NOTONCHANNEL), 0); 
-        return ;
-    }
-    else if(/* the user doesn't have the op access to kick someone*/)
-    {
-        LOG_KICKWITHOUTOP(_raw_start_time, input_user->_nickname, channel_target); 
-        send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
-        return ;
-    }
-    else 
-    {
-        // KICK THE USER 
-    }
-}
+//     if(/* the chan doesn't exist */)
+//     {
+//         LOG_KICKUKNOWNCHAN(_raw_start_time, input_user->_nickname, channel_target);
+//         send(input_fd, ERR_NOSUCHCHANNEL, strlen(ERR_NOSUCHCHANNEL), 0); 
+//         return ;
+//     }
+//     else if(/* the target_user is not in the chan*/)
+//     {
+//         LOG_KICKNOTONTHECHAN(_raw_start_time, input_user->_nickname, user_target, channel_target); 
+//         send(input_fd, ERR_NOTONCHANNEL, strlen(ERR_NOTONCHANNEL), 0); 
+//         return ;
+//     }
+//     else if(/* the user doesn't have the op access to kick someone*/)
+//     {
+//         LOG_KICKWITHOUTOP(_raw_start_time, input_user->_nickname, channel_target); 
+//         send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
+//         return ;
+//     }
+//     else 
+//     {
+//         // KICK THE USER 
+//     }
+// }
 
 
-void    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
-{
-    if(input_user == NULL)
-    {
-        // DO Something
-    }
+// void    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
+// {
+//     if(input_user == NULL)
+//     {
+//         // DO Something
+//     }
 
-    else if()
-}
+//     else if()
+// }
 
 
 

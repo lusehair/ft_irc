@@ -166,6 +166,7 @@ irc::Server::~Server()
     delete (_password);
     std::cout << "The password has been freed\n";
     _log_file.close();
+    std::cout << "The log file is done\n";
 }
 
 // void
