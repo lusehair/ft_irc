@@ -18,7 +18,7 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
     std::string & received_data = unnamed_user_iterator->second._pending_data._recv;
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
-    while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
+    while ((endl_pos = received_data.find("\r\n", last_endl_pos)) != received_data.npos)
     // for (int i = 0; i < 3; ++i)
     {
 // (endl_pos = received_data.find("\r\n", last_endl_pos));
@@ -49,7 +49,7 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
     std::string & received_data = input_user->_pending_data._recv;
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
-    while ((endl_pos = received_data.find("\r\n")) != received_data.npos)
+    while ((endl_pos = received_data.find("\r\n", last_endl_pos)) != received_data.npos)
     // for (int i = 0; i < 2; ++i)
     {
     // (endl_pos = received_data.find("\r\n"));
@@ -163,7 +163,7 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
         return ;
     }
 
-    if(!blank_arguments(command_line, PASS))
+    if(command_line.length() < strlen(PASS) + 2)
     {
         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
@@ -209,7 +209,7 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
  */
 void irc::Server::cmd_nick(const int input_fd, const std::string command_line, User * input_user)
 {
-    if(!blank_arguments(command_line, NICK))
+    if(command_line.length() < strlen(NICK) + 2)
     {
         // err arg
         return;
@@ -257,11 +257,11 @@ void irc::Server::cmd_user(const int input_fd, const std::string command_line, U
 {
 
    
-    std::size_t start = blank_arguments(command_line, USER); // username start
+    std::size_t start = 0; // username start
     std::size_t end = command_line.find(' ', start); // username end
     std::size_t nb_of_space = std::count(command_line.begin(), command_line.end(), ' ');
 
-    if((nb_of_space < 4 || command_line.find(':') == std::string::npos) || !blank_arguments(command_line, USER))
+    if((nb_of_space < 4 || command_line.find(':') == std::string::npos))
     {
         // LOG USER ERROR [Nick] : Bad request no paramater
         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
