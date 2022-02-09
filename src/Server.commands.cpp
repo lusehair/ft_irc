@@ -9,6 +9,7 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(PASS, &irc::Server::cmd_pass));
     (irc::Server::_commands).insert(std::make_pair(NICK, &irc::Server::cmd_nick));
     (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
+    (irc::Server::_commands).insert(std::make_pair(PING, &irc::Server::cmd_ping));
     
 }
 
@@ -302,19 +303,19 @@ void irc::Server::cmd_user(const int input_fd, const std::string command_line, U
     send_header(new_user);
 }
 
-// void    irc::Server::cmd_pong(const int input_fd, const std::string command_line, User * input_user)
-// {
-//     if(input_user == NULL)
-//     {
-//         LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
-//         send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
+void    irc::Server::cmd_ping(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
+        send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
 
-//     }
-//     std::string ret = command_line; 
-//     ret.replace(1,1,"O"); 
-//     LOG_PONGUSERPING(_raw_start_time, input_user->_nickname);
-//     send(input_fd, ret.c_str(), ret.size(),0);
-// }
+    }
+    std::string ret = command_line; 
+    ret.replace(1,1,"O"); 
+    LOG_PONGUSERPING(_raw_start_time, input_user->_nickname);
+    send(input_fd, ret.c_str(), ret.size(),0);
+}
 
 
 // void    irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
