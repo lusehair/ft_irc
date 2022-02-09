@@ -84,7 +84,8 @@ irc::Server::loop( void )
             }
 
             // For each opened socket, check if it's in the set of ready to read and act accordingly
-            for (pending_socket_iterator = _unnamed_users.begin(); number_of_ready_sockets > 0 && pending_socket_iterator != _unnamed_users.end(); ++pending_socket_iterator)
+            pending_socket_iterator = _unnamed_users.begin();
+            while (number_of_ready_sockets > 0 && pending_socket_iterator != _unnamed_users.end())
             {
                 // If the current socket is in the set of ready sockets
                 if (FD_ISSET(pending_socket_iterator->first, &_ready_sockets))
@@ -95,7 +96,7 @@ irc::Server::loop( void )
                     // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(pending_socket_iterator->first, _main_buffer, MAX_REQUEST_LEN, 0);
-                    std::cout << "socket n'" << pending_socket_iterator->first << ". bytes received: " << byte_count;
+                    std::cout << "socket n'" << pending_socket_iterator->first << ". bytes received: " << byte_count << "\n";
                     if (byte_count == -1)
                     {
                         if (errno == EAGAIN)
@@ -107,9 +108,8 @@ irc::Server::loop( void )
                         _opened_sockets.erase(pending_socket_iterator->first);
                         FD_CLR(pending_socket_iterator->first, &_client_sockets);
                         tmp_pending_socket_iterator = pending_socket_iterator;
-                        ++tmp_pending_socket_iterator;
-                        _unnamed_users.erase(pending_socket_iterator);
-                        pending_socket_iterator = tmp_pending_socket_iterator;
+                        ++pending_socket_iterator;
+                        _unnamed_users.erase(tmp_pending_socket_iterator);
                     }
                     else if (byte_count == 0)
                     {
@@ -118,13 +118,12 @@ irc::Server::loop( void )
                         _opened_sockets.erase(pending_socket_iterator->first);
                         FD_CLR(pending_socket_iterator->first, &_client_sockets);
                         tmp_pending_socket_iterator = pending_socket_iterator;
-                        ++tmp_pending_socket_iterator;
-                        _unnamed_users.erase(pending_socket_iterator);
-                        pending_socket_iterator = tmp_pending_socket_iterator;
+                        ++pending_socket_iterator;
+                        _unnamed_users.erase(tmp_pending_socket_iterator);
                     }
                     else
                     {
-                        std::cout << ". raw input: [\n" << _main_buffer << "]\n";
+                        // std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
                         pending_socket_iterator->second._pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
@@ -132,13 +131,16 @@ irc::Server::loop( void )
                             std::cout << "Total pending packet:\n" << pending_socket_iterator->second._pending_data._recv;
                         }
 
-                        cmd_caller(pending_socket_iterator);
+                        tmp_pending_socket_iterator = pending_socket_iterator;
+                        ++pending_socket_iterator;
+                        cmd_caller(tmp_pending_socket_iterator);
                     }
                 }
             }
 
             // For each opened socket, check if it's in the set of ready to read and act accordingly
-            for (connected_user_iterator = _connected_users.begin(); number_of_ready_sockets > 0 && connected_user_iterator != _connected_users.end(); ++connected_user_iterator)
+            connected_user_iterator = _connected_users.begin();
+            while (number_of_ready_sockets > 0 && connected_user_iterator != _connected_users.end())
             {
                 // If the current socket is in the set of ready sockets
                 if (FD_ISSET(connected_user_iterator->second->_own_socket, &_ready_sockets))
@@ -149,7 +151,7 @@ irc::Server::loop( void )
                     // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(connected_user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
-                    std::cout << "socket n'" << connected_user_iterator->second->_own_socket << ". bytes received: " << byte_count;
+                    std::cout << "socket n'" << connected_user_iterator->second->_own_socket << ". bytes received: " << byte_count << "\n";
                     if (byte_count == -1)
                     {
                         if (errno == EAGAIN)
@@ -161,9 +163,8 @@ irc::Server::loop( void )
                         _opened_sockets.erase(connected_user_iterator->second->_own_socket);
                         FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);
                         tmp_connected_user_iterator = connected_user_iterator;
-                        ++tmp_connected_user_iterator;
-                        _connected_users.erase(connected_user_iterator);
-                        connected_user_iterator = tmp_connected_user_iterator;
+                        ++connected_user_iterator;
+                        _connected_users.erase(tmp_connected_user_iterator);
                     }
                     else if (byte_count == 0)
                     {
@@ -172,13 +173,12 @@ irc::Server::loop( void )
                         _opened_sockets.erase(connected_user_iterator->second->_own_socket);
                         FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);
                         tmp_connected_user_iterator = connected_user_iterator;
-                        ++tmp_connected_user_iterator;
-                        _connected_users.erase(connected_user_iterator);
-                        connected_user_iterator = tmp_connected_user_iterator;
+                        ++connected_user_iterator;
+                        _connected_users.erase(tmp_connected_user_iterator);
                     }
                     else
                     {
-                        std::cout << ". raw input: [\n" << _main_buffer << "]\n";
+                        // std::cout << ". raw input: [\n" << _main_buffer << "]\n";
 
                         connected_user_iterator->second->_pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
@@ -186,7 +186,9 @@ irc::Server::loop( void )
                             std::cout << "Total pending packet:\n" << connected_user_iterator->second->_pending_data._recv;
                         }
 
-                        cmd_caller(connected_user_iterator->second);
+                        tmp_connected_user_iterator = connected_user_iterator;
+                        ++connected_user_iterator;
+                        cmd_caller(tmp_connected_user_iterator->second);
                     }
                 }
             }

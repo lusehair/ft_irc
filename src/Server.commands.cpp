@@ -2,6 +2,7 @@
 #include "log.hpp"
 #include "Channel.hpp"
 #include <cstdio>
+
 void
 irc::Server::init_commands_map( void )
 {
@@ -19,14 +20,12 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
     while ((endl_pos = received_data.find("\r\n", last_endl_pos)) != received_data.npos)
-    // for (int i = 0; i < 3; ++i)
     {
-// (endl_pos = received_data.find("\r\n", last_endl_pos));
         std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
-        std::cout << "|" << command_line << "|\n";
-        std::cout << "____" << static_cast<int>(received_data[endl_pos]) << "____\n";
-        std::cout << "____" << static_cast<int>(received_data[endl_pos + 1]) << "____\n";
-        std::cout << "lastendl = " << last_endl_pos << " endlpos = " << endl_pos << "\n";
+// std::cout << "|" << command_line << "|\n";
+// std::cout << "____" << static_cast<int>(received_data[endl_pos]) << "____\n";
+// std::cout << "____" << static_cast<int>(received_data[endl_pos + 1]) << "____\n";
+// std::cout << "lastendl = " << last_endl_pos << " endlpos = " << endl_pos << "\n";
         size_t command_name_end = command_line.find(" ");
         if (command_name_end == command_line.npos || (command_name_end != command_line.npos && !(command_name_end < endl_pos)))
         {
@@ -50,11 +49,9 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
     while ((endl_pos = received_data.find("\r\n", last_endl_pos)) != received_data.npos)
-    // for (int i = 0; i < 2; ++i)
     {
-    // (endl_pos = received_data.find("\r\n"));
         std::string command_line = received_data.substr(last_endl_pos, endl_pos - last_endl_pos);
-        std::cout << "|" << command_line << "|\n";
+// std::cout << "|" << command_line << "|\n";
         size_t command_name_end = command_line.find(" ");
         if (command_name_end == command_line.npos || (command_name_end != command_line.npos && !(command_name_end < endl_pos)))
         {
@@ -98,24 +95,6 @@ void     irc::Server::disconnect_user(User * target_user)
         delete(target_user);
         _connected_users.erase(target_user->_nickname);
 } 
-
-size_t    blank_arguments(std::string input_line, const char * cmd)
-{
-    (void) input_line;
-    (void )cmd;
-
-    for(size_t i = strlen(cmd) + 1 ; input_line.size(); i++)
-    {
-        if(input_line[i] != ' ' )
-        {
-              //std::cout << "INTO THE FOR|" << input_line[i] << '|';
-              return i;
-        }
-          
-    }
-    //puts("why is not here");
-    return 0;
-}
 
 /**
  * @brief Hash Password 
@@ -171,9 +150,11 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
     }   
     
     std::string clean_pass = command_line.substr(strlen(PASS) + 1); 
-    int *hash_pass = pass_hash(clean_pass); 
+    int *hash_pass = pass_hash(clean_pass);
+std::cout << "b pass check\n";
     for(unsigned long i = 0; i < clean_pass.size(); i++)
     {
+std::cout << "a pass check\n";
         if(hash_pass[i] != _password[i])
         {
             delete (hash_pass);
