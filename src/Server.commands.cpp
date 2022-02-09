@@ -11,6 +11,8 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
 }
 
+
+
 // function to split on \n, check if there is one and delete the command line from _recv after each call to the corresponding command function
 
 template <>
@@ -68,18 +70,33 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
     received_data.erase(0, last_endl_pos);
 }
 
+std::string irc::Server::reply(const User * input_user ,  int code, std::string message) const 
+{
+    std::string reply = ":localhost "; 
+    reply += code;
+    reply+= " ";
+    reply += input_user->_nickname; 
+    reply += " : " + message; 
+    return(reply); 
+
+}
+
 void    irc::Server::send_header(const User * input_user) const
 {
-    std::string line = "Hello from server " + input_user->_nickname + '\n'; 
+    std::string line = "Hello from server " + input_user->_nickname + "\n\r"; 
+    std::string retline; 
     std::ifstream head ("src/head_message"); 
     int user_socket = input_user->_own_socket; 
-
+    int i = 1;
     if(head.is_open())
     {
         while(getline (head, line))
         {
-          send(user_socket, line.c_str(), line.size(), 0);  
+          retline = reply(input_user, i, line); 
+          send(user_socket, retline.c_str(), line.size(), 0);  
+          i++;
           line.clear(); 
+          retline.clear();
         }
     }
    send(user_socket, line.c_str(), line.size(), 0);
@@ -252,24 +269,29 @@ void irc::Server::cmd_user(const int input_fd, const std::string command_line, U
 
     std::string username = command_line.substr(5, end - start);
     std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
-
-    if(input_user != NULL || (unnamed_it != _unnamed_users.end()))
+    if(input_user != NULL)
+    //if(input_user != NULL || (unnamed_it != _connected_users.end()))
     {
             // LOG USER ERROR [Nick] : [USERNAME] is already taken
             LOG_USERTAKEN(_raw_start_time, unnamed_it->second.nick_name, username); 
             send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
             return ;
     }
+
+    //if (unnamed_it->second.nick_name.size() != 0)
     
-    else if (unnamed_it->second.nick_name.size() != 0)
-    {
+    // else 
+    // {
+            
             User * new_user = new User(unnamed_it->second.nick_name, username, unnamed_it->first); 
             _connected_users.insert(std::make_pair(unnamed_it->second.nick_name, new_user)); 
-            _unnamed_users.erase(input_fd); 
+            //_unnamed_users.erase(input_fd); 
+           
             send_header(new_user);
             // LOG USER : [NICKNAME] is connected to the server 
             LOG_USERCONNECTED(_raw_start_time, unnamed_it->second.nick_name);
-    }
+            puts("pass after");
+   // }
     
 }
 

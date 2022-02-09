@@ -162,7 +162,7 @@ namespace irc
                 void cmd_caller( T identifier );
 
             void send_header(const User * input_user) const;
-
+            std::string reply(const User * input_user ,  int code, std::string message) const;
             void disconnect_user(User * target_user); 
 
     };

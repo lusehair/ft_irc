@@ -106,6 +106,9 @@
 #define LOG_KICKNOTONTHECHAN(TIME, USER,TARGET, CHAN) _log_file << log_time(TIME) << "s" << "User: " << USER << " try to kick " << TARGET << " is not in the channel: " << CHAN << '\n'
 #define LOG_KICKWITHOUTOP(TIME, USER, CHAN) _log_file << log_time(TIME) << "s" << " User: " << USER << "try to kick someone whithout operator access in the channel: " << CHAN << '\n' 
 
+// #define
+// #define ERR_NEEDMOREPARAMS(USER, )
+
 long    log_time(time_t input_time);  
 
 
