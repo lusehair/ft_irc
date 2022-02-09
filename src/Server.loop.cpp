@@ -145,6 +145,7 @@ irc::Server::loop( void )
                 // If the current socket is in the set of ready sockets
                 if (FD_ISSET(connected_user_iterator->second->_own_socket, &_ready_sockets))
                 {
+                    std::cout << "toto\n";
                     // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
 

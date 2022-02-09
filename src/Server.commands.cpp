@@ -9,6 +9,7 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(PASS, &irc::Server::cmd_pass));
     (irc::Server::_commands).insert(std::make_pair(NICK, &irc::Server::cmd_nick));
     (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
+    
 }
 
 
@@ -70,9 +71,9 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
     received_data.erase(0, last_endl_pos);
 }
 
-std::string irc::Server::reply(const User * input_user ,  int code, std::string message) const 
+std::string irc::Server::reply(const User * input_user ,  const char * code, std::string message) const 
 {
-    std::string reply = ":localhost "; 
+    std::string reply = ":" + input_user->_nickname + "!" + input_user->_nickname + "@" + "localhost " + code + " " + input_user->_nickname + ":" + message; 
     reply += code;
     reply+= " ";
     reply += input_user->_nickname; 
@@ -83,23 +84,23 @@ std::string irc::Server::reply(const User * input_user ,  int code, std::string 
 
 void    irc::Server::send_header(const User * input_user) const
 {
-    std::string line = "Hello from server " + input_user->_nickname + "\n\r"; 
-    std::string retline; 
-    std::ifstream head ("src/head_message"); 
-    int user_socket = input_user->_own_socket; 
-    int i = 1;
-    if(head.is_open())
-    {
-        while(getline (head, line))
-        {
-          retline = reply(input_user, i, line); 
-          send(user_socket, retline.c_str(), line.size(), 0);  
-          i++;
-          line.clear(); 
+    //std::string line = "Hello from server " + input_user->_nickname + "\r\n"; 
+    //std::string retline; 
+    //std::ifstream head ("src/head_message"); 
+    //int user_socket = input_user->_own_socket; 
+    //int i = 1;
+    //if(head.is_open())
+    //{
+      //  while(getline (head, line))
+        //{
+          std::string retline = reply(input_user, "001", "Hello from lusehair server\r\n");
+          send(input_user->_own_socket, retline.c_str(), retline.size(), 0);  
+          //i++;
+          //line.clear(); 
           retline.clear();
-        }
-    }
-   send(user_socket, line.c_str(), line.size(), 0);
+        //}
+    //}
+    
 }
 
 
@@ -213,18 +214,35 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
         return;
     }
     std::string nick = command_line.substr(strlen(NICK) + 1); // segfault?
+    
+    if(input_user == NULL)
+     puts("into null nick");
+
     if (input_user != NULL)
     {
+        
         if(input_user->_own_socket == input_fd) 
         {
+           puts("---------------into same fd in nick");
+           
             User * tmp = input_user;
+           std::cout << "The old " << tmp->_nickname << " and the new :" << nick << "\n"; 
             _connected_users.erase(input_user->_nickname); 
+           
             // LOG NICK [tmp->nick] change his nickname for nick
             LOG_NICKCHANGE(_raw_start_time, tmp->_nickname, nick);
+            
+            std::cout << " -- Is just the new user with new nick : " << _connected_users.find(tmp->_nickname)->first << " OLD \n"; 
+            std::string change_confirm = ":" + tmp->_nickname + "!" + nick + "@" + "localhost NICK :" + nick + "\r\n"; 
             tmp->_nickname = nick;
             _connected_users.insert(std::make_pair(nick, tmp));
-            // REPLY TO CLIENT??
+            std::cout << " Is just the new user with new nick : " << _connected_users.find(tmp->_nickname)->first << " NEW\n"; 
+            // REPLY TO CLIENT
+           
+            send(input_fd, change_confirm.c_str(), change_confirm.size(), 0);
+
         }
+
         else 
         {
             LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick); 
@@ -253,8 +271,6 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
  */
 void irc::Server::cmd_user(const int input_fd, const std::string command_line, User * input_user)
 {
-
-   
     std::size_t start = 0; // username start
     std::size_t end = command_line.find(' ', start); // username end
     std::size_t nb_of_space = std::count(command_line.begin(), command_line.end(), ' ');
@@ -266,33 +282,24 @@ void irc::Server::cmd_user(const int input_fd, const std::string command_line, U
         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ; 
     }
-
     std::string username = command_line.substr(5, end - start);
     std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
     if(input_user != NULL)
-    //if(input_user != NULL || (unnamed_it != _connected_users.end()))
     {
             // LOG USER ERROR [Nick] : [USERNAME] is already taken
             LOG_USERTAKEN(_raw_start_time, unnamed_it->second.nick_name, username); 
             send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0); 
             return ;
     }
-
-    //if (unnamed_it->second.nick_name.size() != 0)
-    
-    // else 
-    // {
-            
-            User * new_user = new User(unnamed_it->second.nick_name, username, unnamed_it->first); 
-            _connected_users.insert(std::make_pair(unnamed_it->second.nick_name, new_user)); 
-            //_unnamed_users.erase(input_fd); 
-           
-            send_header(new_user);
-            // LOG USER : [NICKNAME] is connected to the server 
-            LOG_USERCONNECTED(_raw_start_time, unnamed_it->second.nick_name);
-            puts("pass after");
-   // }
-    
+    User * new_user = new User(unnamed_it->second.nick_name, username, input_fd); 
+    _connected_users.insert(std::make_pair(new_user->_nickname, new_user)); 
+    _unnamed_users.erase(input_fd); 
+    std::string nick_confirm = ": NICK : | " + (_connected_users.find(new_user->_nickname))->first + " | " + username + " |\r\n"; 
+    std::cout << "-----------------------The nick is " << nick_confirm << std::endl; 
+    send(new_user->_own_socket, nick_confirm.c_str(), nick_confirm.size(), 0);
+    // LOG USER : [NICKNAME] is connected to the server 
+    LOG_USERCONNECTED(_raw_start_time, unnamed_it->second.nick_name);
+    send_header(new_user);
 }
 
 // void    irc::Server::cmd_pong(const int input_fd, const std::string command_line, User * input_user)
