@@ -96,6 +96,7 @@ namespace irc
             std::map<int, pending_socket>       _unnamed_users;
             std::map<std::string, User *>       _connected_users;
             std::map<std::string, Channel *>    _running_channels;
+            std::map<int, std::string *>        _pending_sends;
             std::set<int>                       _opened_sockets; // set of all opened sockets to easily have the maxfd
             time_t                              _raw_start_time; // used for logs
             struct timeval                      _time_before_timeout; // select timeout
@@ -107,6 +108,7 @@ namespace irc
             typedef std::map<int, pending_socket>::iterator       unnamed_users_iterator_t;
             typedef std::map<std::string, User *>::iterator       connected_users_iterator_t;
             typedef std::map<std::string, Channel *>::iterator    running_channels_iterator_t;
+            typedef std::map<int, std::string *>::iterator    pending_sends_iterator_t;
 
         private:
             struct CtorException : std::exception
@@ -154,6 +156,8 @@ namespace irc
             void remove_empty_chan( Channel * target_chan );
 
         private:
+            void try_sending_data( void );
+
             static std::map<const std::string, command_function>    _commands;
 
             void init_commands_map( void );

@@ -144,6 +144,7 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
     {
         LOG_PASSTWICE(_raw_start_time, input_fd);
         input_user->_pending_data._send.append(ERR_ALREADYREGISTRED);
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
                                         // send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
         return ;
@@ -156,6 +157,7 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
     {
         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
         current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS);
+        _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
                                         // send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ;
     }   
@@ -231,6 +233,7 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
             // REPLY TO CLIENT
 
             tmp->_pending_data._send.append(change_confirm);
+            _pending_sends.insert(std::make_pair(input_fd, &(tmp->_pending_data._send)));
                                             // send(input_fd, change_confirm.c_str(), change_confirm.size(), 0);
 
         }
@@ -238,6 +241,7 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
         {
             LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick); 
         }
+
         return ;
 
     }
