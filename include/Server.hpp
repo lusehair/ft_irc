@@ -73,6 +73,7 @@
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
 
+# define CMD_CLOSED_SOCKET true
 
 #include "User.hpp"
 #include "log.hpp"
@@ -151,7 +152,7 @@ namespace irc
             bool user_acquired( const int fd );
             void loop( void );
 
-            typedef void (irc::Server::*command_function)( const int, const std::string, User * );
+            typedef bool (irc::Server::*command_function)( const int, const std::string, User * );
 
             void remove_empty_chan( Channel * target_chan );
 
@@ -164,15 +165,16 @@ namespace irc
 
             int * pass_hash(std::string input_pass );
 
-            void cmd_pass( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_nick( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_user( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_ping( const int input_socket, const std::string command_line, User * input_user); 
-            void cmd_kill( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_kick( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_join( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_quit( const int input_socket, const std::string command_line, User * input_user);
-            void cmd_list( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_pass( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_nick( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_user( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_ping( const int input_socket, const std::string command_line, User * input_user); 
+            bool cmd_kill( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_kick( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_join( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_quit( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_list( const int input_socket, const std::string command_line, User * input_user);
+            bool cmd_privmsg(const int input_socket, const std::string command_line, User * input_user);
 
 
             template < typename T >
@@ -182,7 +184,6 @@ namespace irc
             std::string reply(const User * input_user ,  const char * code, std::string message) const;
             std::string head(const User *input_user);
             void disconnect_user(User * target_user); 
-            cmd_privmsg(const int input_fd, const std::string command_line, User *input_user);
 
     };
 
