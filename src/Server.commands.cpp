@@ -167,7 +167,7 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
         if(hash_pass[i] != _password[i])
         {
             delete (hash_pass);
-            LOG_PASSFAILED(_raw_start_time, input_fd); 
+            LOG_PASSFAILED(_raw_start_time, input_fd);
             _unnamed_users.erase(current_unnamed_user);
             _opened_sockets.erase(current_unnamed_user->first);
             FD_CLR(input_fd, &_client_sockets);
@@ -207,7 +207,7 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
     std::string nick = command_line.substr(strlen(NICK) + 1); // segfault?
     
     if(input_user == NULL)
-    puts("into null nick");
+        puts("into null nick");
 
     if (input_user != NULL)
     {
@@ -229,23 +229,30 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
             _connected_users.insert(std::make_pair(nick, tmp));
             std::cout << " Is just the new user with new nick : " << _connected_users.find(tmp->_nickname)->first << " NEW\n"; 
             // REPLY TO CLIENT
-           
-            send(input_fd, change_confirm.c_str(), change_confirm.size(), 0);
+
+            tmp->_pending_data._send.append(change_confirm);
+                                            // send(input_fd, change_confirm.c_str(), change_confirm.size(), 0);
 
         }
-
         else 
         {
             LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick); 
         }
         return ;
+
     }
-
-    // LOG NICK [FD] : Connected to the server has [NICKNAME] nickname
-    LOG_NICKREGISTER(_raw_start_time, nick);
-
-    std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
-    unnamed_it->second.nick_name = nick;
+    else
+    {
+        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
+        if (_password != NULL && current_unnamed_user->second.pass_check != true) {
+            _unnamed_users.erase(current_unnamed_user);
+            _opened_sockets.erase(current_unnamed_user->first);
+            FD_CLR(input_fd, &_client_sockets);
+            close(input_fd);
+        }
+        // LOG NICK [FD] : Connected to the server has [NICKNAME] nickname
+        LOG_NICKREGISTER(_raw_start_time, nick);
+    }
 }
 
 
