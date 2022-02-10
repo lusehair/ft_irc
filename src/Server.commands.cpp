@@ -1,11 +1,8 @@
 #include "Server.hpp"
 #include "log.hpp"
-<<<<<<< Updated upstream
-=======
 #include "Channel.hpp"
 
 //Used for the fopen and close the MOTD file (fopen & fcloses)
->>>>>>> Stashed changes
 #include <cstdio>
 
 void
@@ -83,9 +80,7 @@ std::string irc::Server::reply(const User * input_user ,  const char * code, std
 
 }
 
-<<<<<<< Updated upstream
-void    irc::Server::send_header(User * input_user) const
-=======
+
 std::string irc::Server::head(const User *input_user)
 {
     std::string ret =  ":" + input_user->_nickname + "!" + input_user->_username + "@" + "localhost ";
@@ -93,7 +88,6 @@ std::string irc::Server::head(const User *input_user)
 }
 
 void    irc::Server::send_header(const User * input_user) const
->>>>>>> Stashed changes
 {
     //std::string line = "Hello from server " + input_user->_nickname + "\r\n"; 
     //std::string retline; 
@@ -233,45 +227,18 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
             tmp->_nickname = nick;
             _connected_users.insert(std::make_pair(nick, tmp));
             // REPLY TO CLIENT
-<<<<<<< Updated upstream
-
-            tmp->_pending_data._send.append(change_confirm);
-            _pending_sends.insert(std::make_pair(input_fd, &(tmp->_pending_data._send)));
-                                            // send(input_fd, change_confirm.c_str(), change_confirm.size(), 0);
-
-=======
             send(input_fd, change_confirm.c_str(), change_confirm.size(), 0);
->>>>>>> Stashed changes
         }
         else 
         {
             LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick); 
         }
-<<<<<<< Updated upstream
-
-        return ;
-
-    }
-    else
-    {
-        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
-        if (_password != NULL && current_unnamed_user->second.pass_check != true) {
-            _unnamed_users.erase(current_unnamed_user);
-            _opened_sockets.erase(current_unnamed_user->first);
-            FD_CLR(input_fd, &_client_sockets);
-            close(input_fd);
-        }
-        // LOG NICK [FD] : Connected to the server has [NICKNAME] nickname
-        LOG_NICKREGISTER(_raw_start_time, nick);
-    }
-=======
         return ;
     }
     // LOG NICK [FD] : Connected to the server has [NICKNAME] nickname
     LOG_NICKREGISTER(_raw_start_time, nick);
     std::map<int, pending_socket>::iterator unnamed_it = _unnamed_users.find(input_fd);
     unnamed_it->second.nick_name = nick;
->>>>>>> Stashed changes
 }
 
 
@@ -562,7 +529,7 @@ void    irc::Server::cmd_join(const int input_fd, const std::string command_line
     }
 }
 
-void    irc::Server::cmd_PRIVMSG(const int input_fd, const std::string command_line, User *input_user)
+void    irc::Server::cmd_privmsg(const int input_fd, const std::string command_line, User *input_user)
 {
     if(input_user == NULL)
         return ;
