@@ -174,3 +174,24 @@ irc::Server::~Server()
 // {
 //     _password = new_password;
 // }
+
+void     irc::Server::disconnect_user(User * target_user)
+{
+        std::string tmp_nick = target_user->_nickname; 
+        _opened_sockets.erase(target_user->_own_socket);
+        FD_CLR(target_user->_own_socket, &_client_sockets);
+        close(target_user->_own_socket); 
+        delete(target_user);
+        _connected_users.erase(target_user->_nickname);
+} 
+
+void
+irc::Server::remove_empty_chan( Channel * target_chan )
+{
+    running_channels_iterator_t it = _running_channels.find(target_chan->get_name());
+    if (it != _running_channels.end())
+    {
+        delete it->second;
+        _running_channels.erase(it);
+    }
+}

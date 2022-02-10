@@ -39,7 +39,7 @@
 // make_pair
 # include <utility>
 
-// for_each
+// for_each, min
 # include <algorithm>
 
 
@@ -60,6 +60,7 @@
 # define QUIT "QUIT"
 # define LIST "LIST"
 # define PING "PING"
+# define JOIN "JOIN"
 
 # define ERR_NEEDMOREPARAMS "461"
 # define ERR_ALREADYREGISTRED "462"     
@@ -75,29 +76,39 @@
 
 #include "User.hpp"
 #include "log.hpp"
+#include "Channel.hpp"
 
 namespace irc
 {
+
+    class User;
+    class Channel;
 
     class Server
     {
 
         private:
-            int *                           _password;
-            int                             _listening_socket;
-            fd_set                          _client_sockets; // for select parameters
-            fd_set                          _ready_sockets; // for select return
-            struct                          pending_socket; 
-            std::map<int, pending_socket>   _unnamed_users;
-            std::map<std::string, User *>   _connected_users;
-            std::set<void *>                _running_channels; // void * == Channel; int == Modes
-            std::set<int>                   _opened_sockets; // set of all opened sockets to easily have the maxfd
-            time_t                          _raw_start_time; // used for logs
-            struct timeval                  _time_before_timeout; // select timeout
-            char                            _main_buffer[MAX_REQUEST_LEN + 1];
-            char                            _ip_buffer[INET6_ADDRSTRLEN];
-            std::ofstream                   _log_file; 
+            int *                               _password;
+            int                                 _listening_socket;
+            fd_set                              _client_sockets; // for select parameters
+            fd_set                              _ready_sockets; // for select return
+            struct                              pending_socket; 
+            std::map<int, pending_socket>       _unnamed_users;
+            std::map<std::string, User *>       _connected_users;
+            std::map<std::string, Channel *>    _running_channels;
+            std::set<int>                       _opened_sockets; // set of all opened sockets to easily have the maxfd
+            time_t                              _raw_start_time; // used for logs
+            struct timeval                      _time_before_timeout; // select timeout
+            char                                _main_buffer[MAX_REQUEST_LEN + 1];
+            char                                _ip_buffer[INET6_ADDRSTRLEN];
+            std::ofstream                       _log_file; 
 
+        public:
+            typedef std::map<int, pending_socket>::iterator       unnamed_users_iterator_t;
+            typedef std::map<std::string, User *>::iterator       connected_users_iterator_t;
+            typedef std::map<std::string, Channel *>::iterator    running_channels_iterator_t;
+
+        private:
             struct CtorException : std::exception
             {
                 const char * what() const _NOEXCEPT
@@ -135,13 +146,14 @@ namespace irc
 
             void set_password( const std::string new_password );
 
-            bool user_acquired(const int fd);
+            bool user_acquired( const int fd );
             void loop( void );
 
             typedef void (irc::Server::*command_function)( const int, const std::string, User * );
 
-        private:
+            void remove_empty_chan( Channel * target_chan );
 
+        private:
             static std::map<const std::string, command_function>    _commands;
 
             void init_commands_map( void );
@@ -162,7 +174,7 @@ namespace irc
             template < typename T >
                 void cmd_caller( T identifier );
 
-            void send_header(const User * input_user) const;
+            void send_header(User * input_user) const;
             std::string reply(const User * input_user ,  const char * code, std::string message) const;
             void disconnect_user(User * target_user); 
 

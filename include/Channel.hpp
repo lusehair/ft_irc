@@ -9,17 +9,22 @@
 
 // irc::User
 #include "User.hpp"
+#include "Server.hpp"
 
 namespace irc
 {
+
+    class Server;
+    class User;
 
     class Channel
     {
 
         private:
-            std::map<irc::User *, const bool>   _members;
+            Server &                            _server_master;
+            std::map<const User *, const bool>  _members;
             const std::string                   _name;
-            std::string                         _topic;
+            // std::string                         _topic;
             int                                 _members_count;
 
             Channel();
@@ -27,42 +32,17 @@ namespace irc
             Channel & operator = (const Channel & other);
 
         public:
-            Channel(const User * channel_operator, const std::string channel_name);
+            Channel(irc::Server & server, const irc::User * channel_operator, const std::string channel_name);
 
             ~Channel();
 
-            void add_user(const User * new_member);
-            void kick_user(User * target_member);
+            const std::string & get_name( void ) const;
+
+            void add_user(const irc::User * new_member);
+            void kick_user(irc::User * target_member);
 
     };
 
-}
-
-irc::Channel::Channel( const User * channel_operator, const std::string channel_name )
-    : _name(channel_name)
-{
-    (void)channel_operator;
-    // _members.insert(std::make_pair(channel_operator, true));
-    ++_members_count;
-}
-
-void
-irc::Channel::add_user( const User * new_member )
-{
-    (void)new_member;
-    // _members.insert(std::make_pair(new_member, false));
-    ++_members_count;
-}
-
-void
-irc::Channel::kick_user( User * target_member )
-{
-    _members.erase(target_member);
-    --_members_count;
-    if (_members_count == 0)
-    {
-        ;
-    }
 }
 
 #endif

@@ -4,10 +4,12 @@
 // For string storage (username)
 # include <string>
 # include <list> // For channel container
-// # include "Channel.hpp"
+# include "Channel.hpp"
 
 namespace irc
 {
+
+    class Channel;
 
     class User
     {
@@ -27,7 +29,7 @@ namespace irc
             partial_packet      _pending_data;
 
         private:
-            std::list<void *>   _own_chan; // void * = const Channel *
+            std::list<Channel *>   _joined_channels; // void * = const Channel *
 
             User();
 
@@ -36,6 +38,9 @@ namespace irc
             // User(const User * other);
 
             ~User();
+
+            void make_current(Channel * current_channel);
+            void remove_channel(Channel * to_remove_channel);
 
     };
 

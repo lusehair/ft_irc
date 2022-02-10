@@ -1,6 +1,5 @@
 #include "Server.hpp"
 #include "log.hpp"
-#include "Channel.hpp"
 #include <cstdio>
 
 void
@@ -10,10 +9,9 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(NICK, &irc::Server::cmd_nick));
     (irc::Server::_commands).insert(std::make_pair(USER, &irc::Server::cmd_user));
     (irc::Server::_commands).insert(std::make_pair(PING, &irc::Server::cmd_ping));
+    (irc::Server::_commands).insert(std::make_pair(JOIN, &irc::Server::cmd_join));
     
 }
-
-
 
 // function to split on \n, check if there is one and delete the command line from _recv after each call to the corresponding command function
 
@@ -83,7 +81,7 @@ std::string irc::Server::reply(const User * input_user ,  const char * code, std
 
 }
 
-void    irc::Server::send_header(const User * input_user) const
+void    irc::Server::send_header(User * input_user) const
 {
     //std::string line = "Hello from server " + input_user->_nickname + "\r\n"; 
     //std::string retline; 
@@ -95,25 +93,14 @@ void    irc::Server::send_header(const User * input_user) const
       //  while(getline (head, line))
         //{
           std::string retline = reply(input_user, "001", "Hello from lusehair server\r\n");
-          send(input_user->_own_socket, retline.c_str(), retline.size(), 0);  
+          input_user->_pending_data._send.append(retline);
+                                                    //   send(input_user->_own_socket, retline.c_str(), retline.size(), 0);  
           //i++;
           //line.clear(); 
-          retline.clear();
         //}
     //}
     
 }
-
-
-void     irc::Server::disconnect_user(User * target_user)
-{
-        std::string tmp_nick = target_user->_nickname; 
-        _opened_sockets.erase(target_user->_own_socket);
-        FD_CLR(target_user->_own_socket, &_client_sockets);
-        close(target_user->_own_socket); 
-        delete(target_user);
-        _connected_users.erase(target_user->_nickname);
-} 
 
 /**
  * @brief Hash Password 
@@ -156,42 +143,45 @@ void irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
     if(input_user != NULL)
     {
         LOG_PASSTWICE(_raw_start_time, input_fd);
-        send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
+        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED);
+                                        // send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
         return ;
     }
 
+    unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
+    _opened_sockets.insert(input_fd);
+
     if(command_line.length() < strlen(PASS) + 2)
     {
         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-        send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
+        current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS);
+                                        // send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return ;
     }   
     
     std::string clean_pass = command_line.substr(strlen(PASS) + 1); 
     int *hash_pass = pass_hash(clean_pass);
-std::cout << "b pass check\n";
     for(unsigned long i = 0; i < clean_pass.size(); i++)
     {
-std::cout << "a pass check\n";
         if(hash_pass[i] != _password[i])
         {
             delete (hash_pass);
             LOG_PASSFAILED(_raw_start_time, input_fd); 
-            _unnamed_users.erase(input_fd);
-            _opened_sockets.erase(input_fd);
+            _unnamed_users.erase(current_unnamed_user);
+            _opened_sockets.erase(current_unnamed_user->first);
             FD_CLR(input_fd, &_client_sockets);
             close(input_fd);
             return ;
         }
-        _unnamed_users[input_fd].pass_check = true;
+        current_unnamed_user->second.pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
         LOG_PASSSUCCESS(_raw_start_time, input_fd); 
     }
     
 
     // _unnamed_users.insert(make_pair(input_fd, "")); 
-    // delete(hash_pass); 
+    delete(hash_pass);
 }
 
 /**
@@ -217,7 +207,7 @@ void irc::Server::cmd_nick(const int input_fd, const std::string command_line, U
     std::string nick = command_line.substr(strlen(NICK) + 1); // segfault?
     
     if(input_user == NULL)
-     puts("into null nick");
+    puts("into null nick");
 
     if (input_user != NULL)
     {
@@ -516,16 +506,32 @@ void    irc::Server::cmd_ping(const int input_fd, const std::string command_line
 // }
 
 
-// void    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
-// {
-//     if(input_user == NULL)
-//     {
-//         // DO Something
-//     }
+void    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
+{
+    (void)input_fd;
+    if(input_user == NULL)
+    {
+        return ;
+    }
 
-//     else if()
-// }
+    size_t next_comma, next_space, next_hashtag = 0;
+    std::string channel_name;
+    running_channels_iterator_t running_channels_iterator;
 
+    while ((next_hashtag = command_line.find('#', next_hashtag)) != command_line.npos) {
+        next_space = command_line.find(' ', next_hashtag);
+        next_comma = command_line.find(',', next_hashtag);
+        channel_name = command_line.substr(next_hashtag + 1, std::min(std::min(next_space, next_comma), command_line.length()) - next_hashtag + 1);
 
+        running_channels_iterator = _running_channels.find(channel_name);
+        if (running_channels_iterator != _running_channels.end()) {
+            running_channels_iterator->second->add_user(input_user);
+        } else {
+            running_channels_iterator = _running_channels.insert(std::make_pair(channel_name, new irc::Channel(*this, input_user, channel_name))).first;    
+        }
+        input_user->make_current(running_channels_iterator->second);
 
-
+        ++next_hashtag;
+        // channel joined msg
+    }
+}
