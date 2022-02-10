@@ -180,7 +180,9 @@ namespace irc
 
             void send_header(User * input_user) const;
             std::string reply(const User * input_user ,  const char * code, std::string message) const;
+            std::string head(const User *input_user);
             void disconnect_user(User * target_user); 
+            cmd_PRIVMSG(const int input_fd, const std::string command_line, User *input_user);
 
     };
 
