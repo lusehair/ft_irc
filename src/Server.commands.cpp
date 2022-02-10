@@ -75,11 +75,12 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
 
 std::string irc::Server::reply(const User * input_user ,  const char * code, std::string message) const 
 {
-    std::string reply = ":" + input_user->_nickname + "!" + input_user->_username + "@" + "localhost " + code + " " + input_user->_nickname + ":" + message; 
-    reply += code;
-    reply+= " ";
-    reply += input_user->_nickname; 
-    reply += " : " + message; 
+    std::string reply = ":" + input_user->_nickname + "!" + input_user->_nickname + "@" + "localhost " + code + " " + input_user->_nickname + " :" + message; 
+    // reply += code;
+    // reply+= " ";
+    // reply += input_user->_nickname; 
+    // reply += " : " + message; 
+    //std::cout << "__ INTO the reply |" << reply << std::endl;
     return(reply); 
 
 }
@@ -212,7 +213,7 @@ bool irc::Server::cmd_pass(const int input_fd, const std::string command_line, U
  */
 bool irc::Server::cmd_nick(const int input_fd, const std::string command_line, User * input_user)
 {
-    std::string nick = command_line.substr(strlen(NICK) + 2, command_line.size()); // segfault?
+    std::string nick = command_line.substr(strlen(NICK) + 1, command_line.size()); // segfault?
 
     if (input_user != NULL)
     {   
@@ -312,10 +313,14 @@ bool irc::Server::cmd_user(const int input_fd, const std::string command_line, U
     // std::string nick_confirm = ": NICK : | " + (_connected_users.find(new_user->_nickname))->first + " | " + username + " |\r\n";
     // LOG USER : [NICKNAME] is connected to the server 
     LOG_USERCONNECTED(_raw_start_time, current_unnamed_user->second.nick_name);
+    
     new_user->_pending_data._send.append(reply(new_user, "001", "Hello from irc server\r\n"));
+    std::cout << " _____" << reply(new_user, "001", "Hello from irc server\r\n");
+    
     if (_pending_sends.insert(std::make_pair(new_user->_own_socket, &(new_user->_pending_data._send))).second != true) {
         _pending_sends.find(new_user->_own_socket)->second = &(current_unnamed_user->second._pending_data._send);
     }
+    puts("should be here");
     return !CMD_CLOSED_SOCKET;
 }
 
