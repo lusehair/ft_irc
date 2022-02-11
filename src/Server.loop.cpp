@@ -211,7 +211,7 @@ irc::Server::try_sending_data( void )
         while ((end_of_line = data_to_send_it->second->find("\r\n", end_of_line)) != data_to_send_it->second->npos) {
             end_of_line += 2;
 
-            if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data(), last_end_of_line, end_of_line - last_end_of_line)) == -1) {
+            if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data() + last_end_of_line, end_of_line - last_end_of_line, 0)) == -1) {
                 break ;
             } else if (static_cast<size_t>(bytes_sent) != last_end_of_line - end_of_line) {
                 last_end_of_line += bytes_sent;
