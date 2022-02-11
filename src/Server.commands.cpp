@@ -157,7 +157,7 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
                                         // send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
-        return &input_user->pending_data._recv;
+        return &input_user->_pending_data._recv;
     }
 
     unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
@@ -194,7 +194,7 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
 
     // _unnamed_users.insert(make_pair(input_fd, "")); 
     delete(hash_pass);
-    return current_unnamed_user->second._pending_data._recv;
+    return &current_unnamed_user->second._pending_data._recv;
 }
 
 /**

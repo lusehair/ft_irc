@@ -114,7 +114,7 @@ namespace irc
         private:
             struct CtorException : std::exception
             {
-                const char * what() const _NOEXCEPT
+                const char * what() const _NOTHROW
                 {
                     return "CtorException, check the logs!\n";
                 }
