@@ -72,7 +72,9 @@
 # define ERR_NOTONCHANNEL "442"
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
-# define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + ":Nickname is already in use\n\r"
+# define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + " :Nickname is already in use\r\n"
+# 
+
 
 # define CMD_CLOSED_SOCKET true
 

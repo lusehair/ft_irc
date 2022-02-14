@@ -215,9 +215,22 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
 {
     std::string nick = command_line.substr(strlen(NICK) + 1, command_line.size()); // segfault?
 
+    
+    
+    
+    
     if (input_user != NULL)
     {   
-        if(input_user->_own_socket == input_fd) 
+        if(_connected_users.find(nick) != _connected_users.end())
+        {
+           
+            LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick);
+            input_user->_pending_data._send.append(ERR_NICKNAMEINUSE(input_user, input_user->_nickname, nick));
+            _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
+            
+        }
+        
+        else if (input_user->_own_socket == input_fd) 
         {
             LOG_NICKCHANGE(_raw_start_time, input_user->_nickname, nick);
 
@@ -230,19 +243,25 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
             tmp->_nickname = nick;
             _connected_users.insert(std::make_pair(nick, tmp));
             input_user = tmp;
+            return &tmp->_pending_data._recv;
         }
-        else 
-        {
-            LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick);
-            // tmp->_pending_data._send.append(NICK_TAKEN);
-            // _pending_sends.insert(std::make_pair(tmp->_own_socket, &(tmp->_pending_data._send)));
-        }
-
-        return &input_user->_pending_data._recv;
+       return &input_user->_pending_data._recv;
     }
     else
     {
-        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
+          unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
+        
+        if(_connected_users.find(nick) != _connected_users.end())
+        {
+              puts("___into it !");
+              std::string ret = ": 433 * " + nick + " :Nickname is already in use\r\n"; 
+              current_unnamed_user->second._pending_data._send.append(ret); 
+              _pending_sends.insert(std::make_pair(input_fd, &(current_unnamed_user->second._pending_data._send)));
+              return &current_unnamed_user->second._pending_data._recv;
+        }
+        
+
+      
         if (current_unnamed_user->second.pass_check != true) {
             _unnamed_users.erase(current_unnamed_user);
             _opened_sockets.erase(current_unnamed_user->first);
