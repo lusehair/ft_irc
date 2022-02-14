@@ -132,12 +132,14 @@ namespace irc
             // user_name??
             struct pending_socket
             {
-                std::string     nick_name;
+                std::string     nickname;
+                std::string     username;
                 bool            pass_check;
                 partial_packet  _pending_data;
 
                 pending_socket()
-                    : nick_name(std::string())
+                    : nickname(std::string())
+                    , username(std::string())
                     , pass_check(false)
                 {
                 }
@@ -160,13 +162,8 @@ namespace irc
             void remove_empty_chan( Channel * target_chan );
 
         private:
-            void try_sending_data( void );
-
             static std::map<const std::string, command_function>    _commands;
-
             void init_commands_map( void );
-
-            int * pass_hash(std::string input_pass );
 
             std::string * cmd_pass( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_nick( const int input_socket, const std::string command_line, User * input_user);
@@ -183,9 +180,12 @@ namespace irc
             template < typename T >
                 void cmd_caller( T identifier );
 
-            void send_header(User * input_user) const;
-            std::string reply(const User * input_user ,  const char * code, std::string message) const;
+            int * pass_hash(std::string input_pass );
             std::string head(const User *input_user);
+            // void send_header(User * input_user) const;
+            void try_sending_data( void );
+            std::string reply(const User * input_user ,  const char * code, std::string message) const;
+            std::string * user_create(unnamed_users_iterator_t valid_unnamed_user);
             void disconnect_user(User * target_user); 
 
     };
