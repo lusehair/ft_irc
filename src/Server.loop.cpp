@@ -17,6 +17,7 @@ irc::Server::loop( void )
 
     for (;;)
     {
+        puts("Ater the for");
         if (g_signum != 0) {
             std::cout << "\nSignal n'" << g_signum << ". Programm closing\n";
             return ;
@@ -44,11 +45,12 @@ irc::Server::loop( void )
         }
         else
         {
+           
             // If the listening socket is ready it means we have at least one connection to accept
             if (FD_ISSET(_listening_socket, &_ready_sockets))
             {
                 --number_of_ready_sockets;
-
+                
                 if ((new_client_socket = accept(_listening_socket, new_client_address.ai_addr, &new_client_address.ai_addrlen)) != -1)
                 {
                     int optval = 1;
@@ -56,6 +58,7 @@ irc::Server::loop( void )
                     {
                         // log socket did not set to needed options
                         close(new_client_socket);
+                       
                     }
                     else
                     {
@@ -90,6 +93,8 @@ irc::Server::loop( void )
             pending_socket_iterator = _unnamed_users.begin();
             while (number_of_ready_sockets > 0 && pending_socket_iterator != _unnamed_users.end())
             {
+                
+                puts("on the first while");
                 // If the current socket is in the set of ready sockets
                 if (FD_ISSET(pending_socket_iterator->first, &_ready_sockets))
                 {
@@ -139,19 +144,26 @@ irc::Server::loop( void )
                         cmd_caller(tmp_pending_socket_iterator);
                     }
                 }
+                else 
+                {
+                    ++pending_socket_iterator;
+                }
             }
 
             // For each opened socket, check if it's in the set of ready to read and act accordingly
             connected_user_iterator = _connected_users.begin();
             while (number_of_ready_sockets > 0 && connected_user_iterator != _connected_users.end())
             {
+                
+                //puts("on the second while");
                 // If the current socket is in the set of ready sockets
+                std::cout << "___IS_"
                 if (FD_ISSET(connected_user_iterator->second->_own_socket, &_ready_sockets))
                 {
                     std::cout << "toto\n";
                     // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
-
+                     puts("_______may loop here");
                     // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(connected_user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
@@ -195,7 +207,15 @@ irc::Server::loop( void )
                         cmd_caller(tmp_connected_user_iterator->second);
                     }
                 }
+                else 
+                {
+                   
+                    ++connected_user_iterator; 
+                }
+            
             }
+            
+ 
 
             try_sending_data();
         }
@@ -212,8 +232,10 @@ irc::Server::try_sending_data( void )
     pending_sends_iterator_t data_to_send_it = _pending_sends.begin();
     while (data_to_send_it != _pending_sends.end()) {
 
+   puts("in the try send data first while");
     std::cout << std::string(data_to_send_it->second->data() + last_end_of_line);
         while ((end_of_line = data_to_send_it->second->find("\r\n", end_of_line)) != data_to_send_it->second->npos) {
+            puts("in the try send data second while");
             end_of_line += 2;
             
             if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data() + last_end_of_line, end_of_line - last_end_of_line, 0)) == -1) {
