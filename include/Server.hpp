@@ -66,12 +66,13 @@
 # define ERR_ALREADYREGISTRED "462"     
 # define ERR_NOTREGISTERED "451"
 # define ERR_NOPRIVILEGES "481"
-# define ERR_NOSUCHNICK "401"
+# define ERR_NOSUCHNICK(USERC, REQUSER) head(USERC) + "401 " + REQUSER + " :No such nick/channel\r\n"
 # define ERR_CHANOPRIVSNEEDED "482"
 # define ERR_NOSUCHCHANNEL "403"
 # define ERR_NOTONCHANNEL "442"
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
+# define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + ":Nickname is already in use\n\r"
 
 # define CMD_CLOSED_SOCKET true
 
@@ -114,7 +115,7 @@ namespace irc
         private:
             struct CtorException : std::exception
             {
-                const char * what() const _NOTHROW
+                const char * what() const _NOEXCEPT
                 {
                     return "CtorException, check the logs!\n";
                 }
