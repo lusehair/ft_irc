@@ -134,7 +134,12 @@ irc::Server::loop( void )
                         tmp_pending_socket_iterator = pending_socket_iterator;
                         ++pending_socket_iterator;
                         cmd_caller(tmp_pending_socket_iterator);
+                        FD_CLR(tmp_pending_socket_iterator->first, &_ready_sockets);
                     }
+                }
+                else
+                {
+                    ++pending_socket_iterator;
                 }
             }
 
@@ -192,6 +197,10 @@ irc::Server::loop( void )
                         cmd_caller(tmp_connected_user_iterator->second);
                     }
                 }
+                else
+                {
+                    ++connected_user_iterator;
+                }
             }
 
             try_sending_data();
@@ -209,7 +218,6 @@ irc::Server::try_sending_data( void )
     pending_sends_iterator_t data_to_send_it = _pending_sends.begin();
     while (data_to_send_it != _pending_sends.end()) {
 
-    std::cout << std::string(data_to_send_it->second->data() + last_end_of_line);
         while ((end_of_line = data_to_send_it->second->find("\r\n", end_of_line)) != data_to_send_it->second->npos) {
             end_of_line += 2;
             

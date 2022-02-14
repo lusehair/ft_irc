@@ -75,7 +75,7 @@ void irc::Server::cmd_caller<irc::User *>(User * input_user)
 
 std::string irc::Server::reply(const User * input_user ,  const char * code, std::string message) const 
 {
-    std::string reply = ":" + input_user->_nickname + "!" + input_user->_nickname + "@" + "localhost " + code + " " + input_user->_nickname + " :" + message; 
+    std::string reply = ":" + input_user->_nickname + "!" + input_user->_username + "@" + "localhost " + code + " " + input_user->_nickname + " :" + message; 
     // reply += code;
     // reply+= " ";
     // reply += input_user->_nickname; 
@@ -189,8 +189,8 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
         }
         current_unnamed_user->second.pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
-        LOG_PASSSUCCESS(_raw_start_time, input_fd); 
     }
+    LOG_PASSSUCCESS(_raw_start_time, input_fd); 
     
 
     // _unnamed_users.insert(make_pair(input_fd, "")); 
@@ -208,7 +208,6 @@ irc::Server::user_create(unnamed_users_iterator_t valid_unnamed_user)
     _connected_users.insert(std::make_pair(new_user->_nickname, new_user));
     _unnamed_users.erase(valid_unnamed_user->first);
 
-    std::string nick_confirm = ": NICK : | " + (_connected_users.find(new_user->_nickname))->first + " | " + valid_unnamed_user->second.username + " |\r\n";
     new_user->_pending_data._send.append(reply(new_user, "001", "Hello from irc server\r\n"));
 
     if (_pending_sends.insert(std::make_pair(new_user->_own_socket, &(new_user->_pending_data._send))).second != true) {
@@ -218,6 +217,7 @@ irc::Server::user_create(unnamed_users_iterator_t valid_unnamed_user)
     LOG_USERCONNECTED(_raw_start_time, valid_unnamed_user->second.nickname);
     return &new_user->_pending_data._recv;
 }
+
 
 /**
  * @brief Command NICK from IRC Protocol 
@@ -265,10 +265,10 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
         
         if(_connected_users.find(nick) != _connected_users.end())
         {
-              std::string ret = ": 433 * " + nick + " :Nickname is already in use\r\n"; 
-              current_unnamed_user->second._pending_data._send.append(ret); 
-              _pending_sends.insert(std::make_pair(input_fd, &(current_unnamed_user->second._pending_data._send)));
-              return &current_unnamed_user->second._pending_data._recv;
+            std::string ret = ": 433 * " + nick + " :Nickname is already in use\r\n"; 
+            current_unnamed_user->second._pending_data._send.append(ret); 
+            _pending_sends.insert(std::make_pair(input_fd, &(current_unnamed_user->second._pending_data._send)));
+            return &current_unnamed_user->second._pending_data._recv;
         }
 
         if (current_unnamed_user->second.pass_check != true) {
@@ -609,4 +609,3 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     _pending_sends.insert(std::make_pair(input_fd, &(input_user->_pending_data._send)));
     return &input_user->_pending_data._recv;
 }
-

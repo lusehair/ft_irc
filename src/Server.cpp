@@ -15,10 +15,8 @@ irc::Server::Server( const char * port_number, const char * input_pass )
         memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
         memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
         time(&_raw_start_time);
-        _log_file.open (".log"); 
-        // log ctor start
+        _log_file.open (".log");
         LOG_IRC_START(_raw_start_time);  
-        
     }
 
     { // Open a socket, bind and listen to it
@@ -37,7 +35,6 @@ irc::Server::Server( const char * port_number, const char * input_pass )
             {
                 // log getaddrinfo fail intead of cerr print
                 LOG_ERRGETADDRINFO(_raw_start_time, port_number);
-                std::cerr << gai_strerror(ret);
                 throw CtorException();
             }
             else

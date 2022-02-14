@@ -20,7 +20,7 @@ DEPS						:= \
 	$(OBJS:.o=.d)
 
 C							:= clang++
-CPPFLAGS					:= -Wall -Wextra -Werror -std=c++98 
+CPPFLAGS					:= -g -Wall -Wextra -Werror -std=c++98 
 DEPFLAGS					:= -MMD -MP
 
 R							:= rm -f
