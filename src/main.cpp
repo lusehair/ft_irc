@@ -3,10 +3,11 @@
 #include <csignal>
 
 std::map<const std::string, irc::Server::command_function>    irc::Server::_commands;
+int     g_signum = 0;
 
 void sig_handle( int sig_number )
 {
-    std::cout << "\nSignal n'" << sig_number << ". Programm closing\n";
+    g_signum = sig_number;
 }
 
 int main(int ac, char **av)

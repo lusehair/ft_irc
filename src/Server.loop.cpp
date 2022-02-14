@@ -17,12 +17,15 @@ irc::Server::loop( void )
 
     for (;;)
     {
+        if (g_signum != 0) {
+            std::cout << "\nSignal n'" << g_signum << ". Programm closing\n";
+            return ;
+        }
+
         // Set temporary variable that will get overwritten by select
         _ready_sockets = _client_sockets;
         local_time_before_timeout = _time_before_timeout;
-// std::cout << "Before op use\n";
         max_fd = *(_opened_sockets.rbegin());
-// std::cout << "After op use\n";
 
         std::cout << "Waiting on select\n";
         number_of_ready_sockets = select(max_fd + 1, &_ready_sockets, NULL, NULL, &local_time_before_timeout);

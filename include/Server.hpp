@@ -2,7 +2,7 @@
 # define SERVER_HPP
 
 // memset, strerro << "\n"r
-#include <cstring>
+# include <cstring>
 
 // data storage
 # include <string>
@@ -12,17 +12,17 @@
 // fd, input and output
 # include <iostream>
 # include <unistd.h>
-#include <fstream>
+# include <fstream>
 
 
 // INET6_ADDRSTRLEN
-#include <netinet/in.h>
+# include <netinet/in.h>
 
 // accept, bind, setsockopt, recv, send, socket, socket option macro
 # include <sys/socket.h>
 
 // fcntl
-#include <fcntl.h>
+# include <fcntl.h>
 
 // gai_strerror, addrinfo, AI_NUMERICHOST
 # include <netdb.h>
@@ -76,9 +76,11 @@
 
 # define CMD_CLOSED_SOCKET true
 
-#include "User.hpp"
-#include "log.hpp"
-#include "Channel.hpp"
+# include "User.hpp"
+# include "log.hpp"
+# include "Channel.hpp"
+
+extern int      g_signum;
 
 namespace irc
 {
