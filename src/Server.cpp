@@ -1,7 +1,7 @@
 #include "Server.hpp"
 
 irc::Server::Server( const char * port_number, const char * input_pass )
-    : _password(pass_hash(input_pass))
+    : _password(pass_hash(input_pass)), _passlength(strlen(input_pass))
 {
     int                 optval;
     struct addrinfo *   potential_addresses;

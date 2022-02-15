@@ -73,7 +73,7 @@
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
 # define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + " :Nickname is already in use\r\n"
-# 
+
 
 
 # define CMD_CLOSED_SOCKET true
@@ -93,6 +93,7 @@ namespace irc
 
         private:
             int *                               _password;
+            unsigned int                        _passlength;
             int                                 _listening_socket;
             fd_set                              _client_sockets; // for select parameters
             fd_set                              _ready_sockets; // for select return
@@ -175,7 +176,7 @@ namespace irc
             std::string * cmd_quit( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_list( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user);
-
+            std::string * cmd_hashtag_case(const std::string command_line, User *input_user); 
 
             template < typename T >
                 void cmd_caller( T identifier );

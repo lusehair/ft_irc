@@ -174,7 +174,17 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
     }   
     
     std::string clean_pass = command_line.substr(strlen(PASS) + 1); 
+    if(clean_pass.size() != _passlength)
+    {
+            LOG_PASSFAILED(_raw_start_time, input_fd);
+            _unnamed_users.erase(current_unnamed_user);
+            _opened_sockets.erase(current_unnamed_user->first);
+            FD_CLR(input_fd, &_client_sockets);
+            close(input_fd);
+            return NULL; 
+    }
     int *hash_pass = pass_hash(clean_pass);
+    
     for(unsigned long i = 0; i < clean_pass.size(); i++)
     {
         if(hash_pass[i] != _password[i])
@@ -187,12 +197,10 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
             close(input_fd);
             return NULL;
         }
-        current_unnamed_user->second.pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
     }
     LOG_PASSSUCCESS(_raw_start_time, input_fd); 
-    
-
+    current_unnamed_user->second.pass_check = true;
     // _unnamed_users.insert(make_pair(input_fd, "")); 
     delete(hash_pass);
     return &current_unnamed_user->second._pending_data._recv;
@@ -608,4 +616,29 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     user_it->second->_pending_data._send.append(ret);
     _pending_sends.insert(std::make_pair(input_fd, &(input_user->_pending_data._send)));
     return &input_user->_pending_data._recv;
+}
+
+
+std::string * irc::Server::cmd_hashtag_case(const std::string command_line, User *input_user)
+{
+    size_t start = command_line.find("#") + 1;
+    size_t end = command_line.find(" ", start); 
+    std::string chan = command_line.substr(start, end - start); 
+
+    std::map<std::string, Channel *>::iterator chan_it = _running_channels.find(chan)->first; 
+    if(chan_it == _running_channels.end())
+    {
+        // ERR NOSUCHCHANNEL 
+    }
+    std::map<const User*, const bool>::iterator members_it; 
+    for(members_it = chan_it->_members.begin(); members_it != chan_it->end() ; members_it++)
+    {
+        if(members_it->_own_socket != input_user->_own_socket)
+        {
+            members_it->second->_pending_data._send.append(command_line); 
+            _pending_sends.insert(std::make_pair(members_it->_own_socket, &(members_it->_pending_data._send)));
+        }
+    }
+    return &input_user->_pending_data._recv; 
+
 }
