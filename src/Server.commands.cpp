@@ -14,6 +14,7 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(PING, &irc::Server::cmd_ping));
     (irc::Server::_commands).insert(std::make_pair(JOIN, &irc::Server::cmd_join));
     (irc::Server::_commands).insert(std::make_pair(PRIVMSG, &irc::Server::cmd_privmsg));
+    (irc::Server::_commands).insert(std::make_pair(KILL, &irc::Server::cmd_kill));
 }
 
 // function to split on \n, check if there is one and delete the command line from _recv after each call to the corresponding command function
@@ -290,6 +291,7 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
     }
 }
 
+
 /**
  * @brief command USER from IRC Protocl
  * 
@@ -341,6 +343,7 @@ std::string * irc::Server::cmd_user(const int input_fd, const std::string comman
     return (&current_unnamed_user->second._pending_data._recv);
 }
 
+
 std::string *    irc::Server::cmd_ping(const int input_fd, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
@@ -356,52 +359,54 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
     return &input_user->_pending_data._recv;
 } 
 
-// void    irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
-// {
-//     size_t end = command_line.find(" ", strlen(KILL) + 2); 
-//     std::string killed_user = command_line.substr(strlen(KILL) + 2, end - strlen(KILL) + 2);
-//     std::string reason = command_line.substr(end + 1, command_line.size() - end);     
-    
-//     if(input_user == NULL)
-//     {
-//         LOG_KILLNOREGISTER(_raw_start_time, input_fd);
-//         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
-//         return ; 
-//     }
 
-//     else if(!input_user->_isOperator)
-//     {
-//         LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
-//         send(input_fd, ERR_NOPRIVILEGES, strlen(ERR_NOPRIVILEGES), 0);
-//         return ; 
-//     }
+std::string *
+irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        LOG_KILLNOREGISTER(_raw_start_time, input_fd);
+        return &_unnamed_users.find(input_fd)->second._pending_data._recv; 
+    }
 
-//     else if(std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
-//     {
-        
-//         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-//         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
-//         return ;
-//     }
+    if(!input_user->_isOperator)
+    {
+        LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
+        input_user->_pending_data._send.append(ERR_NOPRIVILEGES);
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return &input_user->_pending_data._recv;
+    }
 
-    
+    size_t space_pos = command_line.find(" ");
+    size_t second_space_pos = command_line.find(" ", space_pos + 1);
 
-//     std::map<std::string , User * >::iterator user_it = _connected_users.find(killed_user);
-//     if(user_it == _connected_users.end())
-//     {
-//         LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, killed_user);
-//         send(input_fd, ERR_NOSUCHNICK, strlen(ERR_NOSUCHNICK), 0);
-//     }
+    if(std::count(command_line.begin(), command_line.end(), ' ') < 2 || command_line.find(":") == command_line.length() - 1)
+    {
+        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS);
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return &input_user->_pending_data._recv;
+    }
 
-//     else if(input_user->_isOperator)
-//     {
-//         LOG_KILLWITHPRIV(_raw_start_time, input_user->_nickname, killed_user);
-//         // maybe send another msg to killed user 
-//         send(input_fd, reason.c_str(), reason.size(), 0);
-//         // close & delete user method()
-//         disconnect_user(user_it);
-//     }
-// }
+    std::string target = command_line.substr(space_pos + 1, second_space_pos - strlen(KILL) + 1);
+    std::string reason = command_line.substr(second_space_pos + 1, command_line.size() - space_pos);     
+
+    connected_users_iterator_t connected_user_iterator = _connected_users.find(target);
+    if(connected_user_iterator == _connected_users.end())
+    {
+        LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, target);
+        input_user->_pending_data._send.append(ERR_NOSUCHNICK(input_user, target));
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return &input_user->_pending_data._recv;
+    }
+
+    LOG_KILLWITHPRIV(_raw_start_time, input_user->_nickname, target);
+    connected_user_iterator->second->_pending_data._send.append(MSG_KILL(input_user, reason));
+    connected_user_iterator->second->_pending_data._send.append(MSG_QUIT(connected_user_iterator->second, reason));
+    _pending_sends.insert(std::make_pair(connected_user_iterator->second->_own_socket, &connected_user_iterator->second->_pending_data._send));
+    _to_kill_users.push_back(connected_user_iterator->second);
+    return &input_user->_pending_data._recv;
+}
 
 
 

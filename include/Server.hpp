@@ -8,21 +8,22 @@
 # include <string>
 # include <map>
 # include <set>
+# include <vector>
 
 // fd, input and output
 # include <iostream>
 # include <unistd.h>
-#include <fstream>
+# include <fstream>
 
 
 // INET6_ADDRSTRLEN
-#include <netinet/in.h>
+# include <netinet/in.h>
 
 // accept, bind, setsockopt, recv, send, socket, socket option macro
 # include <sys/socket.h>
 
 // fcntl
-#include <fcntl.h>
+# include <fcntl.h>
 
 // gai_strerror, addrinfo, AI_NUMERICHOST
 # include <netdb.h>
@@ -55,7 +56,7 @@
 # define NICK "NICK"
 # define USER "USER"
 # define PRIVMSG "PRIVMSG"
-# define KILL "KILL"
+# define KILL "kill"
 # define KICK "KICK"
 # define QUIT "QUIT"
 # define LIST "LIST"
@@ -70,11 +71,13 @@
 # define ERR_CHANOPRIVSNEEDED "482"
 # define ERR_NOSUCHCHANNEL "403"
 # define ERR_NOTONCHANNEL "442"
+# define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + " :Nickname is already in use\r\n"
+
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
-# define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + " :Nickname is already in use\r\n"
-# 
 
+# define MSG_KILL(USERC, REASON) head(USERC) + "KILL :" + REASON + "\r\n"
+# define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT :" + REASON + "\r\n"
 
 # define CMD_CLOSED_SOCKET true
 
@@ -102,6 +105,7 @@ namespace irc
             std::map<std::string, Channel *>    _running_channels;
             std::map<int, std::string *>        _pending_sends;
             std::set<int>                       _opened_sockets; // set of all opened sockets to easily have the maxfd
+            std::vector<User *>                 _to_kill_users;
             time_t                              _raw_start_time; // used for logs
             struct timeval                      _time_before_timeout; // select timeout
             char                                _main_buffer[MAX_REQUEST_LEN + 1];
