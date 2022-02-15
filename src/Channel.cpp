@@ -1,6 +1,6 @@
 #include "Channel.hpp"
 
-irc::Channel::Channel( irc::Server & server, const User * channel_operator, const std::string channel_name )
+irc::Channel::Channel( irc::Server & server, User * channel_operator, const std::string channel_name )
     : _server_master(server)
     , _name(channel_name)
     , _members_count(0)
@@ -19,10 +19,15 @@ irc::Channel::get_name( void ) const
     return (_name);
 }
 
+
+
+
+
 void
-irc::Channel::add_user( const User * new_member )
+irc::Channel::add_user( User * new_member )
 {
     _members.insert(std::make_pair(new_member, false));
+    
     ++_members_count;
 }
 
@@ -36,4 +41,10 @@ irc::Channel::kick_user( User * target_member )
     {
         _server_master.remove_empty_chan(this);
     }
+}
+
+std::string const 
+irc::Channel::getName(void)
+{
+    return (_name);
 }

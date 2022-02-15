@@ -62,19 +62,15 @@
 # define PING "PING"
 # define JOIN "JOIN"
 
-# define ERR_NEEDMOREPARAMS "461"
-# define ERR_ALREADYREGISTRED "462"     
-# define ERR_NOTREGISTERED "451"
-# define ERR_NOPRIVILEGES "481"
-# define ERR_NOSUCHNICK(USERC, REQUSER) head(USERC) + "401 " + REQUSER + " :No such nick/channel\r\n"
-# define ERR_CHANOPRIVSNEEDED "482"
-# define ERR_NOSUCHCHANNEL "403"
-# define ERR_NOTONCHANNEL "442"
-# define RPL_LISTSTART "321"
-# define RPL_LISTEND "323"
-# define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + " :Nickname is already in use\r\n"
-
-
+# define ERR_NEEDMOREPARAMS(USERC, NICK, CMD) head(USERC) + " 461 " + NICK + " " + CMD + " :Not enough parameters\r\n"
+# define ERR_ALREADYREGISTRED(USERC, NICK) head(USERC) + " 462 " + NICK + " :You may not reregister\r\n"     
+# define ERR_NOTREGISTERED ": 451 :You have not registered "
+# define ERR_NOPRIVILEGES(USERC, NICK) head(USERC) + " 481 " + NICK + " :Permission Denied- You're not an IRC operator\r\n"
+# define ERR_NOSUCHNICK(USERC, REQUSER) head(USERC) + " 401 " + REQUSER + " :No such nick/channel\r\n"
+# define ERR_CHANOPRIVSNEEDED(USERC, NICK, CHAN) head(USERC) + " 482" + '#' + CHAN + " :You're not channel operator\r\n"
+# define ERR_NOSUCHCHANNEL(USERC, REQCHAN) head(USERC) + " 403 " + REQCHAN + " :No such channel\r\n"
+# define ERR_NOTONCHANNEL (USERC, CHAN) head(USERC) +  " 442 " + + '#' + CHAN + " :You're not on that channel" 
+# define ERR_NICKNAMEINUSE(USERC, NICK, NEWNICK) head(USERC) + "433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
 
 # define CMD_CLOSED_SOCKET true
 
@@ -162,6 +158,8 @@ namespace irc
 
             void remove_empty_chan( Channel * target_chan );
 
+            std::string head(const User *input_user);
+
         private:
             static std::map<const std::string, command_function>    _commands;
             void init_commands_map( void );
@@ -176,13 +174,14 @@ namespace irc
             std::string * cmd_quit( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_list( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_hashtag_case(const std::string command_line, User *input_user); 
+            std::string * privmsg_hashtag_case(std::string command_line, User *input_user);
+            void          send_names(User * input_user, Channel * channel_target); 
 
             template < typename T >
                 void cmd_caller( T identifier );
 
             int * pass_hash(std::string input_pass );
-            std::string head(const User *input_user);
+           
             // void send_header(User * input_user) const;
             void try_sending_data( void );
             std::string reply(const User * input_user ,  const char * code, std::string message) const;

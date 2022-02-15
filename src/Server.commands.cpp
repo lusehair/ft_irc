@@ -154,7 +154,7 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
     if(input_user != NULL)
     {
         LOG_PASSTWICE(_raw_start_time, input_fd);
-        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED);
+        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED(input_user, input_user->_nickname));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
                                         // send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
@@ -166,9 +166,10 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
 
     if(command_line.length() < strlen(PASS) + 2)
     {
-        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-        current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS);
-        _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
+       // No need to send a msg 
+        // LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        // current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS(input_user, ));
+        // _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
                                         // send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return &current_unnamed_user->second._pending_data._recv;
     }   
@@ -314,7 +315,7 @@ std::string * irc::Server::cmd_user(const int input_fd, const std::string comman
     if(input_user != NULL)
     {
         LOG_USERTAKEN(_raw_start_time, input_user->_nickname, input_user->_username);
-        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED); // error code format the packet
+        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED(input_user, input_user->_nickname)); // error code format the packet
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
@@ -333,9 +334,11 @@ std::string * irc::Server::cmd_user(const int input_fd, const std::string comman
     std::size_t nb_of_space = std::count(command_line.begin(), command_line.end(), ' ');
     if((nb_of_space < 4 || command_line.find(':') == std::string::npos))
     {
+
+        // no need to send msg 
         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-        current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS);
-        _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
+        // current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS());
+        // _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
         return &current_unnamed_user->second._pending_data._recv; 
     }
 
@@ -443,16 +446,16 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
 //     if(command_line.find("#") == std::string::npos)
 //     {
 //         std::string ret_list; 
-//         for(std::set<void *>::iterator chan_it = _running_channels.begin(); chan_it != chan_it.end() ; chan_it++)
+//         for(std::set<void *>::iterator running_channel_iterator = _running_channels.begin(); running_channel_iterator != running_channel_iterator.end() ; running_channel_iterator++)
 //         {
-//            ret_list = chan_it->_name; 
+//            ret_list = running_channel_iterator->_name; 
 //            ret_list+= " "; 
-//            ret_list+= chan_it->_members_count;
+//            ret_list+= running_channel_iterator->_members_count;
 
-//            if(!chan_it->_topic.empty)
+//            if(!running_channel_iterator->_topic.empty)
 //            {
 //                ret_list+= " "; 
-//                ret_list+= chan_it->_topic;
+//                ret_list+= running_channel_iterator->_topic;
 //            }
 //            ret_list+= '\n';
 //            send(input_fd, ret_list.c_str(), ret_list.size(), 0);
@@ -465,25 +468,25 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
 //     else
 //     {
 //         size_t pos = 0;  
-//         size_t chan_iterate;
+//         size_t running_channel_iteratorerate;
 //         std::string requiere_chan; 
 //         size_t end; 
-//         std::set<std::string>::iterator chan_it;
+//         std::set<std::string>::iterator running_channel_iterator;
 //         std::string ret_list;
 
-//         while((chan_iterate = command_line.find_first_of("#", pos)) != std::string::npos)
+//         while((running_channel_iteratorerate = command_line.find_first_of("#", pos)) != std::string::npos)
 //         {
-//             end = command_line.find_first_of(" ", chan_iterate); 
-//             requiere_chan = command_line.substr(chan_iterate, end - chan_iterate); 
-//             chan_it = _running_channels.find(requiere_chan); 
+//             end = command_line.find_first_of(" ", running_channel_iteratorerate); 
+//             requiere_chan = command_line.substr(running_channel_iteratorerate, end - running_channel_iteratorerate); 
+//             running_channel_iterator = _running_channels.find(requiere_chan); 
             
-//             if(chan_it != _running_channels.end())
+//             if(running_channel_iterator != _running_channels.end())
 //             {
-//                 ret_list = chan_it->_name; 
+//                 ret_list = running_channel_iterator->_name; 
 //                 ret_list+= " "; 
-//                 ret_list+= chan_it->_members_count;
+//                 ret_list+= running_channel_iterator->_members_count;
 
-//                 if(!chan_it->_topic.empty)
+//                 if(!running_channel_iterator->_topic.empty)
 //                 {
 //                     ret_list+= " "; 
 //                     ret_list+= chan->it_topic;
@@ -494,7 +497,7 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
 //                 ret_list.clear();
 //             }
 
-//             pos = chan_iterate + 1; 
+//             pos = running_channel_iteratorerate + 1; 
 //             requiere_chan.clear(); 
 //         }
 //     }
@@ -561,6 +564,31 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
 //     }
 // }
 
+void irc::Server::send_names(User * input_user, Channel * channel_target)
+{
+    std::string ret = head(input_user) + " 353 " + input_user->_nickname + " = #" + channel_target->getName()+ ":" + input_user->_nickname + "\r\n"; 
+    std::map<User*, const bool>::iterator members_it; 
+    std::string notify = head(input_user) + " JOIN :#" + channel_target->getName() + "\r\n";
+    for(members_it =  channel_target->_members.begin(); members_it !=  channel_target->_members.end() ; members_it++)
+    {
+        if(members_it->first->_own_socket != input_user->_own_socket)
+        {
+            members_it->first->_pending_data._send.append(notify); 
+            _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
+            if(members_it->second == false)
+            {
+                ret.append(" " + members_it->first->_nickname);
+            }
+            else 
+            {
+                ret.append(" @" + members_it->first->_nickname);
+            }
+        }
+    }
+    input_user->_pending_data._send.append(ret); 
+    _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
+}
+
 
 std::string *    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
 {
@@ -583,15 +611,19 @@ std::string *    irc::Server::cmd_join(const int input_fd, const std::string com
         if (running_channels_iterator != _running_channels.end()) {
             running_channels_iterator->second->add_user(input_user);
         } else {
-            running_channels_iterator = _running_channels.insert(std::make_pair(channel_name, new irc::Channel(*this, input_user, channel_name))).first;    
+            running_channels_iterator = _running_channels.insert(std::make_pair(channel_name, new irc::Channel(*this, input_user, channel_name))).first;
         }
         input_user->make_current(running_channels_iterator->second);
 
         ++next_hashtag;
         // channel joined msg
+        send_names(input_user, running_channels_iterator->second);
+        // send_names
     }
     return &input_user->_pending_data._recv;
 }
+
+
 
 std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string command_line, User *input_user)
 {
@@ -602,6 +634,11 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     size_t end = command_line.find(":") - 2;
     std::string reciever = command_line.substr(start, end - start);
     std::string ret = head(input_user) + " " + command_line; 
+    if(command_line.find("#") != std::string::npos)
+    {
+        privmsg_hashtag_case(ret, input_user);
+        return &input_user->_pending_data._recv;
+    }
     std::map<std::string , User * >::iterator user_it = _connected_users.find(reciever);
     
     if(user_it == _connected_users.end())
@@ -618,27 +655,28 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     return &input_user->_pending_data._recv;
 }
 
-
-std::string * irc::Server::cmd_hashtag_case(const std::string command_line, User *input_user)
+std::string * irc::Server::privmsg_hashtag_case(std::string command_line, User *input_user)
 {
     size_t start = command_line.find("#") + 1;
     size_t end = command_line.find(" ", start); 
     std::string chan = command_line.substr(start, end - start); 
-
-    std::map<std::string, Channel *>::iterator chan_it = _running_channels.find(chan)->first; 
-    if(chan_it == _running_channels.end())
+    
+    running_channels_iterator_t running_channels_iterator =  _running_channels.find(chan);  
+    if(running_channels_iterator == _running_channels.end())
     {
-        // ERR NOSUCHCHANNEL 
+        puts("still here");
+        ERR_NOSUCHCHANNEL(input_user, chan);
     }
-    std::map<const User*, const bool>::iterator members_it; 
-    for(members_it = chan_it->_members.begin(); members_it != chan_it->end() ; members_it++)
+    std::map<User*, const bool>::iterator members_it; 
+    for(members_it =  running_channels_iterator->second->_members.begin(); members_it !=  running_channels_iterator->second->_members.end() ; members_it++)
     {
-        if(members_it->_own_socket != input_user->_own_socket)
+        if(members_it->first->_own_socket != input_user->_own_socket)
         {
-            members_it->second->_pending_data._send.append(command_line); 
-            _pending_sends.insert(std::make_pair(members_it->_own_socket, &(members_it->_pending_data._send)));
+            members_it->first->_pending_data._send.append(command_line + "\r\n"); 
+            _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
         }
     }
     return &input_user->_pending_data._recv; 
-
 }
+
+
