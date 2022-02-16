@@ -2,6 +2,8 @@
 
 irc::Server::Server( const char * port_number, const char * input_pass )
     : _password(pass_hash(input_pass))
+    , _oper_log("admin")
+    , _oper_pass("admin")
 {
     int                 optval;
     struct addrinfo *   potential_addresses;

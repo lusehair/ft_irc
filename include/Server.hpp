@@ -62,6 +62,7 @@
 # define LIST "LIST"
 # define PING "PING"
 # define JOIN "JOIN"
+# define OPER "OPER"
 
 # define ERR_NEEDMOREPARAMS "461"
 # define ERR_ALREADYREGISTRED "462"     
@@ -72,9 +73,11 @@
 # define ERR_NOSUCHCHANNEL "403"
 # define ERR_NOTONCHANNEL "442"
 # define ERR_NICKNAMEINUSE(USERC, USER, NEWNICK) head(USERC) + "433 " + USER + " " + NEWNICK + " :Nickname is already in use\r\n"
+# define ERR_PASSWDMISMATCH(USERC) head(USERC) + "464 :Password incorrect\r\n"
 
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
+# define RPL_YOUREOPER(USERC) head(USERC) + "381 :You are now an IRC operator\r\n"
 
 # define MSG_KILL(USERC, REASON) head(USERC) + "KILL :" + REASON + "\r\n"
 # define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT :" + REASON + "\r\n"
@@ -95,7 +98,9 @@ namespace irc
     {
 
         private:
-            int *                               _password;
+            const int *                         _password;
+            const std::string                   _oper_log;
+            const std::string                   _oper_pass;
             int                                 _listening_socket;
             fd_set                              _client_sockets; // for select parameters
             fd_set                              _ready_sockets; // for select return
@@ -169,16 +174,17 @@ namespace irc
             static std::map<const std::string, command_function>    _commands;
             void init_commands_map( void );
 
-            std::string * cmd_pass( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_nick( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_user( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_ping( const int input_socket, const std::string command_line, User * input_user); 
-            std::string * cmd_kill( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_kick( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_join( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_quit( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_list( const int input_socket, const std::string command_line, User * input_user);
-            std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user);
+            std::string * cmd_pass( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_nick( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_user( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_ping( const int input_socket, const std::string command_line, User * input_user ); 
+            std::string * cmd_kill( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_kick( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_join( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_quit( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_list( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_oper( const int input_socket, const std::string command_line, User * input_user );
 
 
             template < typename T >

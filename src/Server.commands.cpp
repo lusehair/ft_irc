@@ -15,6 +15,7 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(JOIN, &irc::Server::cmd_join));
     (irc::Server::_commands).insert(std::make_pair(PRIVMSG, &irc::Server::cmd_privmsg));
     (irc::Server::_commands).insert(std::make_pair(KILL, &irc::Server::cmd_kill));
+    (irc::Server::_commands).insert(std::make_pair(OPER, &irc::Server::cmd_oper));
 }
 
 // function to split on \n, check if there is one and delete the command line from _recv after each call to the corresponding command function
@@ -138,39 +139,39 @@ int *    irc::Server::pass_hash(std::string input_pass)
  * @brief Command PASS from IRC Protocol 
  * 
  * We have 3 cases : 
- * 1. If the users is already register (in unnamed users map, find by input_fd)
+ * 1. If the users is already register (in unnamed users map, find by input_socket)
  * 2. If we have no argument (no argument after "PASS" command)
  * 3. If the pass given by the user doesn't match with the server password.
  * 
- * @param input_fd (int)
+ * @param input_socket (int)
  * @sa RFC 2812 (3.1.1)
  * 
  */
 
 
 
-std::string * irc::Server::cmd_pass(const int input_fd, const std::string command_line, User * input_user)
+std::string * irc::Server::cmd_pass(const int input_socket, const std::string command_line, User * input_user)
 {
     // loop in all users to see if the socket is already registered
     if(input_user != NULL)
     {
-        LOG_PASSTWICE(_raw_start_time, input_fd);
+        LOG_PASSTWICE(_raw_start_time, input_socket);
         input_user->_pending_data._send.append(ERR_ALREADYREGISTRED);
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
-                                        // send(input_fd, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
+                                        // send(input_socket, ERR_ALREADYREGISTRED, strlen(ERR_ALREADYREGISTRED), 0);
         // LOG PASS [NICk] : Try to set pass again 
         return &input_user->_pending_data._recv;
     }
 
-    unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
-    _opened_sockets.insert(input_fd);
+    unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
+    _opened_sockets.insert(input_socket);
 
     if(command_line.length() < strlen(PASS) + 2)
     {
-        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        LOG_NOPARAM(_raw_start_time, input_socket, command_line);
         current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS);
         _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
-                                        // send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
+                                        // send(input_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NEEDMOREPARAMS), 0);
         return &current_unnamed_user->second._pending_data._recv;
     }   
     
@@ -181,20 +182,20 @@ std::string * irc::Server::cmd_pass(const int input_fd, const std::string comman
         if(hash_pass[i] != _password[i])
         {
             delete (hash_pass);
-            LOG_PASSFAILED(_raw_start_time, input_fd);
+            LOG_PASSFAILED(_raw_start_time, input_socket);
             _unnamed_users.erase(current_unnamed_user);
             _opened_sockets.erase(current_unnamed_user->first);
-            FD_CLR(input_fd, &_client_sockets);
-            close(input_fd);
+            FD_CLR(input_socket, &_client_sockets);
+            close(input_socket);
             return NULL;
         }
         current_unnamed_user->second.pass_check = true;
         // LOG PASS [SOCKET] pass succesfull 
     }
-    LOG_PASSSUCCESS(_raw_start_time, input_fd); 
+    LOG_PASSSUCCESS(_raw_start_time, input_socket); 
     
 
-    // _unnamed_users.insert(make_pair(input_fd, "")); 
+    // _unnamed_users.insert(make_pair(input_socket, "")); 
     delete(hash_pass);
     return &current_unnamed_user->second._pending_data._recv;
 }
@@ -233,7 +234,7 @@ irc::Server::user_create(unnamed_users_iterator_t valid_unnamed_user)
  * @param const int input_socket 
  *@sa RFC 2812 (3.1.2)
  */
-std::string * irc::Server::cmd_nick(const int input_fd, const std::string command_line, User * input_user)
+std::string * irc::Server::cmd_nick(const int input_socket, const std::string command_line, User * input_user)
 {
     std::string nick = command_line.substr(strlen(NICK) + 1, command_line.length() - strlen(NICK) + 1); // segfault?
 
@@ -245,7 +246,7 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
             input_user->_pending_data._send.append(ERR_NICKNAMEINUSE(input_user, input_user->_nickname, nick));
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         }
-        else // if (input_user->_own_socket == input_fd)  ?? to verify ??
+        else // if (input_user->_own_socket == input_socket)  ?? to verify ??
         {
             input_user->_pending_data._send.append(head(input_user) + "NICK :" + nick + "\r\n");
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
@@ -262,13 +263,13 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
     }
     else
     {
-        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_fd, pending_socket())).first;
+        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
         
         if(_connected_users.find(nick) != _connected_users.end())
         {
             std::string ret = ": 433 * " + nick + " :Nickname is already in use\r\n"; 
             current_unnamed_user->second._pending_data._send.append(ret); 
-            _pending_sends.insert(std::make_pair(input_fd, &(current_unnamed_user->second._pending_data._send)));
+            _pending_sends.insert(std::make_pair(input_socket, &(current_unnamed_user->second._pending_data._send)));
             return &current_unnamed_user->second._pending_data._recv;
         }
 
@@ -276,8 +277,8 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
             _unnamed_users.erase(current_unnamed_user);
             _opened_sockets.erase(current_unnamed_user->first);
             _pending_sends.erase(current_unnamed_user->first);
-            FD_CLR(input_fd, &_client_sockets);
-            close(input_fd);
+            FD_CLR(input_socket, &_client_sockets);
+            close(input_socket);
             return NULL;
         }
 
@@ -299,11 +300,11 @@ std::string * irc::Server::cmd_nick(const int input_fd, const std::string comman
  * 1. If the USER command doesn't have username on his request  (461)
  * 2. User is already register (462)
  * 
- * @param input_fd (int)
+ * @param input_socket (int)
  * @sa RFC 2812 (3.1.3)
  * 
  */
-std::string * irc::Server::cmd_user(const int input_fd, const std::string command_line, User * input_user)
+std::string * irc::Server::cmd_user(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user != NULL)
     {
@@ -313,7 +314,7 @@ std::string * irc::Server::cmd_user(const int input_fd, const std::string comman
         return &input_user->_pending_data._recv;
     }
 
-    std::map<int, pending_socket>::iterator current_unnamed_user = _unnamed_users.find(input_fd);
+    std::map<int, pending_socket>::iterator current_unnamed_user = _unnamed_users.find(input_socket);
 
     if (current_unnamed_user->second.pass_check != true) {
         _unnamed_users.erase(current_unnamed_user);
@@ -327,7 +328,7 @@ std::string * irc::Server::cmd_user(const int input_fd, const std::string comman
     std::size_t nb_of_space = std::count(command_line.begin(), command_line.end(), ' ');
     if((nb_of_space < 4 || command_line.find(':') == std::string::npos))
     {
-        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        LOG_NOPARAM(_raw_start_time, input_socket, command_line);
         current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS);
         _pending_sends.insert(std::make_pair(current_unnamed_user->first, &(current_unnamed_user->second._pending_data._send)));
         return &current_unnamed_user->second._pending_data._recv; 
@@ -344,12 +345,12 @@ std::string * irc::Server::cmd_user(const int input_fd, const std::string comman
 }
 
 
-std::string *    irc::Server::cmd_ping(const int input_fd, const std::string command_line, User * input_user)
+std::string *    irc::Server::cmd_ping(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
     {
-        LOG_PONGNOREGISTERUSER(_raw_start_time, input_fd);
-        send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
+        LOG_PONGNOREGISTERUSER(_raw_start_time, input_socket);
+        send(input_socket, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
     }
     std::string ret = head(input_user) + "PONG :" + command_line.substr(command_line.find(" ") + 1, command_line.size() - command_line.find(" ") + 1) + "\r\n";  
     //std::cout << "_____THE PING MSG IS :" << ret << "\n";
@@ -359,14 +360,37 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
     return &input_user->_pending_data._recv;
 } 
 
-
 std::string *
-irc::Server::cmd_kill(const int input_fd, const std::string command_line, User * input_user)
+irc::Server::cmd_oper(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
     {
-        LOG_KILLNOREGISTER(_raw_start_time, input_fd);
-        return &_unnamed_users.find(input_fd)->second._pending_data._recv; 
+        // LOG_KILLNOREGISTER(_raw_start_time, input_socket); LOG OPER not registered
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
+    }
+
+    size_t first_space_pos = command_line.find(" ");
+    size_t second_space_pos = command_line.find(" ", first_space_pos + 1);
+    std::string log = command_line.substr(first_space_pos + 1, second_space_pos - (strlen(OPER) + 1));
+    std::string pass = command_line.substr(second_space_pos + 1, command_line.size() - first_space_pos);
+
+    if (log == _oper_log && pass == _oper_pass) {
+        input_user->_isOperator = true;
+        input_user->_pending_data._send.append(RPL_YOUREOPER(input_user));
+    } else {
+        input_user->_pending_data._send.append(ERR_PASSWDMISMATCH(input_user));
+    }
+    _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+    return (&input_user->_pending_data._recv);
+}
+
+std::string *
+irc::Server::cmd_kill(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        LOG_KILLNOREGISTER(_raw_start_time, input_socket);
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
 
     if(!input_user->_isOperator)
@@ -382,14 +406,14 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 
     if(std::count(command_line.begin(), command_line.end(), ' ') < 2 || command_line.find(":") == command_line.length() - 1)
     {
-        LOG_NOPARAM(_raw_start_time, input_fd, command_line);
+        LOG_NOPARAM(_raw_start_time, input_socket, command_line);
         input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS);
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return &input_user->_pending_data._recv;
     }
 
-    std::string target = command_line.substr(space_pos + 1, second_space_pos - strlen(KILL) + 1);
-    std::string reason = command_line.substr(second_space_pos + 1, command_line.size() - space_pos);     
+    std::string target = command_line.substr(space_pos + 1, second_space_pos - (strlen(KILL) + 1));
+    std::string reason = command_line.substr(second_space_pos + 2, command_line.size() - space_pos);     
 
     connected_users_iterator_t connected_user_iterator = _connected_users.find(target);
     if(connected_user_iterator == _connected_users.end())
@@ -410,7 +434,7 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 
 
 
-// void    irc::Server::cmd_quit(const int input_fd, const std::string command_line, User * input_user)
+// void    irc::Server::cmd_quit(const int input_socket, const std::string command_line, User * input_user)
 // {
 //     if(input_user == NULL)
 //     {
@@ -428,15 +452,15 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 // }
 
 
-// void    irc::Server::cmd_list(const int input_fd, const std::string command_line, User * input_user)
+// void    irc::Server::cmd_list(const int input_socket, const std::string command_line, User * input_user)
 // {
 //     if(input_user == NULL)
 //     {
-//         send(input_fd, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0);
+//         send(input_socket, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0);
 //         return ; 
 //     }
     
-//     send(input_fd, RPL_LISTSTART, strlen(RPL_LISTSTART), 0);
+//     send(input_socket, RPL_LISTSTART, strlen(RPL_LISTSTART), 0);
 //     if(command_line.find("#") == std::string::npos)
 //     {
 //         std::string ret_list; 
@@ -452,7 +476,7 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 //                ret_list+= chan_it->_topic;
 //            }
 //            ret_list+= '\n';
-//            send(input_fd, ret_list.c_str(), ret_list.size(), 0);
+//            send(input_socket, ret_list.c_str(), ret_list.size(), 0);
 //            ret_list.clear();
 //         }
 //         return; 
@@ -487,7 +511,7 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 //                 }
 
 //                 ret_list+= '\n';
-//                 send(input_fd, ret_list.c_str(), ret_list.size(), 0);
+//                 send(input_socket, ret_list.c_str(), ret_list.size(), 0);
 //                 ret_list.clear();
 //             }
 
@@ -495,16 +519,16 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 //             requiere_chan.clear(); 
 //         }
 //     }
-//     send(input_fd, RPL_LISTEND, strlen(RPL_LISTEND), 0);
+//     send(input_socket, RPL_LISTEND, strlen(RPL_LISTEND), 0);
 // }
 
 
-// void    irc::Server::cmd_kick(const int input_fd, const std::string command_line, User * input_user)
+// void    irc::Server::cmd_kick(const int input_socket, const std::string command_line, User * input_user)
 // {
 //     if (input_user == NULL)
 //     {
-//         LOG_KICKNOREGISTER(_raw_start_time, input_fd);
-//         send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
+//         LOG_KICKNOREGISTER(_raw_start_time, input_socket);
+//         send(input_socket, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
 //         return ;
 //     }
     
@@ -512,8 +536,8 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 //     else if (std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
 //     {
         
-//         LOG_NOPARAM(_raw_start_time, input_fd, command_line);
-//         send(input_fd, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
+//         LOG_NOPARAM(_raw_start_time, input_socket, command_line);
+//         send(input_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
 //         return ;
 //     }
     
@@ -537,19 +561,19 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 //     if(/* the chan doesn't exist */)
 //     {
 //         LOG_KICKUKNOWNCHAN(_raw_start_time, input_user->_nickname, channel_target);
-//         send(input_fd, ERR_NOSUCHCHANNEL, strlen(ERR_NOSUCHCHANNEL), 0); 
+//         send(input_socket, ERR_NOSUCHCHANNEL, strlen(ERR_NOSUCHCHANNEL), 0); 
 //         return ;
 //     }
 //     else if(/* the target_user is not in the chan*/)
 //     {
 //         LOG_KICKNOTONTHECHAN(_raw_start_time, input_user->_nickname, user_target, channel_target); 
-//         send(input_fd, ERR_NOTONCHANNEL, strlen(ERR_NOTONCHANNEL), 0); 
+//         send(input_socket, ERR_NOTONCHANNEL, strlen(ERR_NOTONCHANNEL), 0); 
 //         return ;
 //     }
 //     else if(/* the user doesn't have the op access to kick someone*/)
 //     {
 //         LOG_KICKWITHOUTOP(_raw_start_time, input_user->_nickname, channel_target); 
-//         send(input_fd, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
+//         send(input_socket, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
 //         return ;
 //     }
 //     else 
@@ -559,13 +583,12 @@ irc::Server::cmd_kill(const int input_fd, const std::string command_line, User *
 // }
 
 
-std::string *    irc::Server::cmd_join(const int input_fd, const std::string command_line, User * input_user)
+std::string *    irc::Server::cmd_join(const int input_socket, const std::string command_line, User * input_user)
 {
-    (void)input_fd;
     if(input_user == NULL)
     {
-        // instead kill the connection
-        return NULL;
+        // LOG_KILLNOREGISTER(_raw_start_time, input_socket); NOT REGISTERED
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
 
     size_t next_comma, next_space, next_hashtag = 0;
@@ -590,10 +613,10 @@ std::string *    irc::Server::cmd_join(const int input_fd, const std::string com
     return &input_user->_pending_data._recv;
 }
 
-std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string command_line, User *input_user)
+std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::string command_line, User *input_user)
 {
     if(input_user == NULL)
-        return &_unnamed_users.find(input_fd)->second._pending_data._recv;
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     std::string sender = input_user->_nickname; 
     size_t start = command_line.find(" ") + 1;
     size_t end = command_line.find(":") - 2;
@@ -605,12 +628,12 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     {
         ret = ERR_NOSUCHNICK(input_user, reciever);
         input_user->_pending_data._send.append(ret);
-        _pending_sends.insert(std::make_pair(input_fd, &(input_user->_pending_data._send)));
+        _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;         
     }
     // Change the send to happen 
     //send(user_it->_own_socket, ret-c_str(), ret.size(), 0); 
     user_it->second->_pending_data._send.append(ret);
-    _pending_sends.insert(std::make_pair(input_fd, &(input_user->_pending_data._send)));
+    _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
     return &input_user->_pending_data._recv;
 }

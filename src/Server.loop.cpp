@@ -90,6 +90,7 @@ irc::Server::loop( void )
                 // If the current socket is in the set of ready sockets
                 if (FD_ISSET(pending_socket_iterator->first, &_ready_sockets))
                 {
+                    FD_CLR(pending_socket_iterator->first, &_ready_sockets);
                     // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
 
@@ -134,7 +135,6 @@ irc::Server::loop( void )
                         tmp_pending_socket_iterator = pending_socket_iterator;
                         ++pending_socket_iterator;
                         cmd_caller(tmp_pending_socket_iterator);
-                        FD_CLR(tmp_pending_socket_iterator->first, &_ready_sockets);
                     }
                 }
                 else
@@ -212,11 +212,12 @@ irc::Server::loop( void )
                 _opened_sockets.erase((*target_to_kill)->_own_socket);
                 _pending_sends.erase((*target_to_kill)->_own_socket);
                 FD_CLR((*target_to_kill)->_own_socket, &_client_sockets);
+                _connected_users.erase((*target_to_kill)->_nickname);
                 delete *target_to_kill;
                 tmp_target_to_kill = target_to_kill;
                 ++target_to_kill;
-                _to_kill_users.erase(tmp_target_to_kill);
             }
+            _to_kill_users.clear();
         }
     }
 }
