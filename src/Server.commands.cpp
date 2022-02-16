@@ -615,7 +615,7 @@ std::string *    irc::Server::cmd_join(const int input_socket, const std::string
     while ((next_hashtag = command_line.find('#', next_hashtag)) != command_line.npos) {
         next_space = command_line.find(' ', next_hashtag);
         next_comma = command_line.find(',', next_hashtag);
-        channel_name = command_line.substr(next_hashtag + 1, std::min(std::min(next_space, next_comma), command_line.length()) - next_hashtag + 1);
+        channel_name = command_line.substr(next_hashtag + 1, std::min(std::min(next_space, next_comma), command_line.length()) - (next_hashtag + 1));
         running_channels_iterator = _running_channels.find(channel_name);
         if (running_channels_iterator != _running_channels.end()) {
             running_channels_iterator->second->add_user(input_user);
