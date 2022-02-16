@@ -161,6 +161,7 @@ namespace irc
             void remove_empty_chan( Channel * target_chan );
 
             std::string head(const User *input_user);
+            void privmsg_hashtag_case(std::string command_line, User *input_user);
 
         private:
             static std::map<const std::string, command_function>    _commands;
@@ -176,7 +177,6 @@ namespace irc
             std::string * cmd_quit( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_list( const int input_socket, const std::string command_line, User * input_user);
             std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user);
-            std::string * privmsg_hashtag_case(std::string command_line, User *input_user);
             void          send_names(User * input_user, Channel * channel_target); 
 
             template < typename T >

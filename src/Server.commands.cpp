@@ -633,9 +633,10 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
 {
     if(input_user == NULL)
         return &_unnamed_users.find(input_fd)->second._pending_data._recv;
-    std::string sender = input_user->_nickname; 
+
     size_t start = command_line.find(" ") + 1;
     size_t end = command_line.find(":") - 1;
+    std::string sender = input_user->_nickname; 
     std::string reciever = command_line.substr(start, end - start);
     std::string ret = head(input_user) + command_line + "\r\n"; 
     std::cout << "___THIS IS THE RET |" << ret; 
@@ -663,7 +664,7 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     return &input_user->_pending_data._recv;
 }
 
-std::string * irc::Server::privmsg_hashtag_case(std::string command_line, User *input_user)
+void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_user)
 {
     size_t start = command_line.find("#") + 1;
     size_t end = command_line.find(" ", start); 
@@ -673,18 +674,18 @@ std::string * irc::Server::privmsg_hashtag_case(std::string command_line, User *
     if(running_channels_iterator == _running_channels.end())
     {
         puts("still here");
-        ERR_NOSUCHCHANNEL(input_user, chan);
+        ERR_NOSUCHCHANNEL(input_user, chan); // add the response to the user
     }
     std::map<User*, const bool>::iterator members_it; 
     for(members_it =  running_channels_iterator->second->_members.begin(); members_it !=  running_channels_iterator->second->_members.end() ; members_it++)
     {
-        if(members_it->first->_own_socket != input_user->_own_socket)
+        if(members_it->first != input_user)
         {
-            members_it->first->_pending_data._send.append(command_line + "\r\n"); 
+            members_it->first->_pending_data._send.append(command_line); 
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
         }
     }
-    return &input_user->_pending_data._recv; 
+    return ; 
 }
 
 
