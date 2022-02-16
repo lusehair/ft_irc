@@ -71,6 +71,8 @@
 # define ERR_NOSUCHCHANNEL(USERC, REQCHAN) head(USERC) + " 403 " + REQCHAN + " :No such channel\r\n"
 # define ERR_NOTONCHANNEL (USERC, CHAN) head(USERC) +  " 442 " + + '#' + CHAN + " :You're not on that channel" 
 # define ERR_NICKNAMEINUSE(USERC, NICK, NEWNICK) head(USERC) + "433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
+# define RPL_ENDOFNAMES(USERC, NICK, CHAN) head(USERC) + " 366 " + NICK + " #" + CHAN + " :End of /NAMES list\r\n" 
+
 
 # define CMD_CLOSED_SOCKET true
 

@@ -588,7 +588,7 @@ void irc::Server::send_names(User * input_user, Channel * channel_target)
         }
     }
     ret.append("\r\n");
-    input_user->_pending_data._send.append(ret); 
+    input_user->_pending_data._send.append(ret + RPL_ENDOFNAMES(input_user, input_user->_nickname, channel_target->getName())); 
     _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
     std::cout << "___ the ret for new user is : |" << ret; 
 }
@@ -658,7 +658,8 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
     // Change the send to happen 
     //send(user_it->_own_socket, ret-c_str(), ret.size(), 0); 
     user_it->second->_pending_data._send.append(ret);
-    _pending_sends.insert(std::make_pair(input_fd, &(input_user->_pending_data._send)));
+    _pending_sends.insert(std::make_pair(user_it->second->_own_socket, &(user_it->second->_pending_data._send)));
+    //try_sending_data();
     return &input_user->_pending_data._recv;
 }
 
