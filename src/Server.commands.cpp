@@ -571,16 +571,16 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
 
 void irc::Server::send_names(User * input_user, Channel * channel_target)
 {
-    std::string ret = head(input_user) + " 353 " + input_user->_nickname + " = #" + channel_target->getName()+ " :" + input_user->_nickname; 
+    std::string ret = head(input_user) + "353 " + input_user->_nickname + " = #" + channel_target->getName()+ " :" + input_user->_nickname; 
     std::map<User*, const bool>::iterator members_it; 
-    std::string notify = head(input_user) + " JOIN :#" + channel_target->getName() + "\r\n";
+    std::string notify = head(input_user) + "JOIN :#" + channel_target->getName() + "\r\n";
     puts("into the send names");
     for(members_it =  channel_target->_members.begin(); members_it !=  channel_target->_members.end() ; members_it++)
     {
         if(members_it->first->_own_socket != input_user->_own_socket)
         {
-            members_it->first->_pending_data._send.append(notify); 
             puts("into the for");
+            members_it->first->_pending_data._send.append(notify);
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
             if(members_it->second == false)
             {

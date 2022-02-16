@@ -222,22 +222,22 @@ irc::Server::loop( void )
     }
 }
 
+
 void
 irc::Server::try_sending_data( void )
 {
     size_t                      end_of_line, last_end_of_line;
     int                         bytes_sent;
-    last_end_of_line = end_of_line = 0;
 
     pending_sends_iterator_t data_to_send_it = _pending_sends.begin();
     while (data_to_send_it != _pending_sends.end()) {
+        last_end_of_line = end_of_line = 0;
 
         while ((end_of_line = data_to_send_it->second->find("\r\n", end_of_line)) != data_to_send_it->second->npos) {
             end_of_line += 2;
-            
             if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data() + last_end_of_line, end_of_line - last_end_of_line, 0)) == -1) {
                 break ;
-            } else if (static_cast<size_t>(bytes_sent) != last_end_of_line - end_of_line) {
+            } else if (static_cast<size_t>(bytes_sent) != end_of_line - last_end_of_line) {
                 last_end_of_line += bytes_sent;
                 break ;
             }
