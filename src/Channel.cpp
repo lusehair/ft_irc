@@ -19,10 +19,6 @@ irc::Channel::get_name( void ) const
     return (_name);
 }
 
-
-
-
-
 void
 irc::Channel::add_user( User * new_member )
 {

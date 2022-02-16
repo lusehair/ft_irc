@@ -63,15 +63,16 @@
 # define PING "PING"
 # define JOIN "JOIN"
 # define OPER "OPER"
+# define PART "PART"
 
 # define ERR_NEEDMOREPARAMS(USERC, NICK, CMD) head(USERC) + "461 " + NICK + " " + CMD + " :Not enough parameters\r\n"
 # define ERR_ALREADYREGISTRED(USERC, NICK) head(USERC) + "462 " + NICK + " :You may not reregister\r\n"     
-# define ERR_NOTREGISTERED ": 451 :You have not registered "
+# define ERR_NOTREGISTERED ": 451 :You have not registered\r\n"
 # define ERR_NOPRIVILEGES(USERC, NICK) head(USERC) + "481 " + NICK + " :Permission Denied- You're not an IRC operator\r\n"
 # define ERR_NOSUCHNICK(USERC, REQUSER) head(USERC) + "401 " + REQUSER + " :No such nick/channel\r\n"
 # define ERR_CHANOPRIVSNEEDED(USERC, NICK, CHAN) head(USERC) + "482" + '#' + CHAN + " :You're not channel operator\r\n"
 # define ERR_NOSUCHCHANNEL(USERC, REQCHAN) head(USERC) + "403 " + REQCHAN + " :No such channel\r\n"
-# define ERR_NOTONCHANNEL (USERC, CHAN) head(USERC) +  "442 " + + '#' + CHAN + " :You're not on that channel" 
+# define ERR_NOTONCHANNEL(USERC, CHAN) head(USERC) +  "442 #" + CHAN + " :You're not on that channel\r\n" 
 # define ERR_NICKNAMEINUSE(USERC, NICK, NEWNICK) head(USERC) + "433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
 # define RPL_ENDOFNAMES(USERC, NICK, CHAN) head(USERC) + "366 " + NICK + " #" + CHAN + " :End of /NAMES list\r\n"
 # define ERR_PASSWDMISMATCH(USERC) head(USERC) + "464 :Password incorrect\r\n"
@@ -82,6 +83,8 @@
 
 # define MSG_KILL(USERC, REASON) head(USERC) + "KILL :" + REASON + "\r\n"
 # define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT :" + REASON + "\r\n"
+
+# define PART_NOTICE(USERC, CHAN, REASON) head(USERC) + "PART #" + CHAN + REASON;
 
 # define CMD_CLOSED_SOCKET true
 
@@ -186,12 +189,14 @@ namespace irc
             std::string * cmd_quit( const int input_socket, const std::string command_line, User * input_user );
             std::string * cmd_list( const int input_socket, const std::string command_line, User * input_user );
             std::string * cmd_oper( const int input_socket, const std::string command_line, User * input_user );
+            std::string * cmd_part( const int input_socket, const std::string command_line, User * input_user );
             std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user );
 
             template < typename T >
                 void cmd_caller( T identifier );
 
             void privmsg_hashtag_case(std::string command_line, User *input_user);
+            void make_user_part(User * input_user, const std::string channel_name, const std::string reason);
 
             int * pass_hash(std::string input_pass );
            
