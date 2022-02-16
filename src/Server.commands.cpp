@@ -566,14 +566,16 @@ std::string *    irc::Server::cmd_ping(const int input_fd, const std::string com
 
 void irc::Server::send_names(User * input_user, Channel * channel_target)
 {
-    std::string ret = head(input_user) + " 353 " + input_user->_nickname + " = #" + channel_target->getName()+ ":" + input_user->_nickname + "\r\n"; 
+    std::string ret = head(input_user) + " 353 " + input_user->_nickname + " = #" + channel_target->getName()+ " :" + input_user->_nickname; 
     std::map<User*, const bool>::iterator members_it; 
     std::string notify = head(input_user) + " JOIN :#" + channel_target->getName() + "\r\n";
+    puts("into the send names");
     for(members_it =  channel_target->_members.begin(); members_it !=  channel_target->_members.end() ; members_it++)
     {
         if(members_it->first->_own_socket != input_user->_own_socket)
         {
             members_it->first->_pending_data._send.append(notify); 
+            puts("into the for");
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
             if(members_it->second == false)
             {
@@ -585,8 +587,10 @@ void irc::Server::send_names(User * input_user, Channel * channel_target)
             }
         }
     }
+    ret.append("\r\n");
     input_user->_pending_data._send.append(ret); 
     _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
+    std::cout << "___ the ret for new user is : |" << ret; 
 }
 
 
@@ -631,19 +635,22 @@ std::string *    irc::Server::cmd_privmsg(const int input_fd, const std::string 
         return &_unnamed_users.find(input_fd)->second._pending_data._recv;
     std::string sender = input_user->_nickname; 
     size_t start = command_line.find(" ") + 1;
-    size_t end = command_line.find(":") - 2;
+    size_t end = command_line.find(":") - 1;
     std::string reciever = command_line.substr(start, end - start);
-    std::string ret = head(input_user) + " " + command_line; 
+    std::string ret = head(input_user) + command_line + "\r\n"; 
+    std::cout << "___THIS IS THE RET |" << ret; 
     if(command_line.find("#") != std::string::npos)
     {
         privmsg_hashtag_case(ret, input_user);
         return &input_user->_pending_data._recv;
     }
+    std::cout << "___ the recieve : |" << reciever << "|\n";
     std::map<std::string , User * >::iterator user_it = _connected_users.find(reciever);
     
     if(user_it == _connected_users.end())
     {
         ret = ERR_NOSUCHNICK(input_user, reciever);
+        puts("should be not here");
         input_user->_pending_data._send.append(ret);
         _pending_sends.insert(std::make_pair(input_fd, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;         
