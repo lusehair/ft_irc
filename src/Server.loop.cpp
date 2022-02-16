@@ -17,21 +17,17 @@ irc::Server::loop( void )
 
     for (;;)
     {
-        // Set temporary variable that will get overwritten by select
         _ready_sockets = _client_sockets;
         local_time_before_timeout = _time_before_timeout;
-// std::cout << "Before op use\n";
         max_fd = *(_opened_sockets.rbegin());
-// std::cout << "After op use\n";
 
         std::cout << "Waiting on select\n";
         number_of_ready_sockets = select(max_fd + 1, &_ready_sockets, NULL, NULL, &local_time_before_timeout);
 
         if (number_of_ready_sockets == -1)
         {
-            // log select error
             std::cerr << "Error in select: " << strerror(errno) << "\n";
-            break ; // WARNING: might have to retry
+            break ; 
         }
         else if (number_of_ready_sockets == 0)
         {
@@ -41,7 +37,6 @@ irc::Server::loop( void )
         }
         else
         {
-            // If the listening socket is ready it means we have at least one connection to accept
             if (FD_ISSET(_listening_socket, &_ready_sockets))
             {
                 --number_of_ready_sockets;
@@ -51,19 +46,16 @@ irc::Server::loop( void )
                     int optval = 1;
                     if (setsockopt(_listening_socket, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval)) != 0)
                     {
-                        // log socket did not set to needed options
                         close(new_client_socket);
                     }
                     else
                     {
-                        // Set the new socket to non blocking, effectively protecting against a wrong ready-to-read from accept
                         fcntl(new_client_socket, F_SETFL, O_NONBLOCK);
 
                         FD_SET(new_client_socket, &_client_sockets);
                         _unnamed_users.insert(std::make_pair(new_client_socket, pending_socket()));
                         _opened_sockets.insert(new_client_socket);
 
-                        // log connection accepted
                         std::cout << "Accepted conection from : ";
                         memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
                         if (getnameinfo(new_client_address.ai_addr, new_client_address.ai_addrlen, _ip_buffer, sizeof(_ip_buffer), NULL, 0, NI_NUMERICHOST) != 0)
@@ -78,23 +70,17 @@ irc::Server::loop( void )
                 }
                 else
                 {
-                    // log accept failed
                     std::cerr << "Accept fail: " << strerror(errno) << "\n";
                 }
             }
-
-            // For each opened socket, check if it's in the set of ready to read and act accordingly
             pending_socket_iterator = _unnamed_users.begin();
             while (number_of_ready_sockets > 0 && pending_socket_iterator != _unnamed_users.end())
             {
-                // If the current socket is in the set of ready sockets
                 if (FD_ISSET(pending_socket_iterator->first, &_ready_sockets))
                 {
                     FD_CLR(pending_socket_iterator->first, &_ready_sockets);
-                    // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
 
-                    // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(pending_socket_iterator->first, _main_buffer, MAX_REQUEST_LEN, 0);
                     std::cout << "socket n'" << pending_socket_iterator->first << ". bytes received: " << byte_count << "\n";
@@ -124,8 +110,6 @@ irc::Server::loop( void )
                     }
                     else
                     {
-                        // std::cout << ". raw input: [\n" << _main_buffer << "]\n";
-
                         pending_socket_iterator->second._pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
                         {
@@ -143,18 +127,13 @@ irc::Server::loop( void )
                 }
             }
 
-            // For each opened socket, check if it's in the set of ready to read and act accordingly
             connected_user_iterator = _connected_users.begin();
             while (number_of_ready_sockets > 0 && connected_user_iterator != _connected_users.end())
             {
-                // If the current socket is in the set of ready sockets
                 if (FD_ISSET(connected_user_iterator->second->_own_socket, &_ready_sockets))
                 {
-                    std::cout << "toto\n";
-                    // Mark that we handled one of the ready sockets
                     --number_of_ready_sockets;
 
-                    // Receive its data 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
                     byte_count = recv(connected_user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
                     std::cout << "socket n'" << connected_user_iterator->second->_own_socket << ". bytes received: " << byte_count << "\n";
@@ -184,8 +163,6 @@ irc::Server::loop( void )
                     }
                     else
                     {
-                        // std::cout << ". raw input: [\n" << _main_buffer << "]\n";
-
                         connected_user_iterator->second->_pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
                         {
@@ -204,10 +181,11 @@ irc::Server::loop( void )
             }
 
             try_sending_data();
-
             std::vector<User *>::iterator      target_to_kill = _to_kill_users.begin();
             std::vector<User *>::iterator      tmp_target_to_kill;
-            while(target_to_kill != _to_kill_users.end()) {
+            
+            while(target_to_kill != _to_kill_users.end()) 
+            {
                 close((*target_to_kill)->_own_socket);
                 _opened_sockets.erase((*target_to_kill)->_own_socket);
                 _pending_sends.erase((*target_to_kill)->_own_socket);

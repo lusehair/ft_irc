@@ -104,17 +104,17 @@ namespace irc
             const std::string                   _oper_log;
             const std::string                   _oper_pass;
             int                                 _listening_socket;
-            fd_set                              _client_sockets; // for select parameters
-            fd_set                              _ready_sockets; // for select return
+            fd_set                              _client_sockets; 
+            fd_set                              _ready_sockets; 
             struct                              pending_socket; 
             std::map<int, pending_socket>       _unnamed_users;
             std::map<std::string, User *>       _connected_users;
             std::map<std::string, Channel *>    _running_channels;
             std::map<int, std::string *>        _pending_sends;
-            std::set<int>                       _opened_sockets; // set of all opened sockets to easily have the maxfd
+            std::set<int>                       _opened_sockets; 
             std::vector<User *>                 _to_kill_users;
-            time_t                              _raw_start_time; // used for logs
-            struct timeval                      _time_before_timeout; // select timeout
+            time_t                              _raw_start_time; 
+            struct timeval                      _time_before_timeout; 
             char                                _main_buffer[MAX_REQUEST_LEN + 1];
             char                                _ip_buffer[INET6_ADDRSTRLEN];
             std::ofstream                       _log_file; 
@@ -140,7 +140,6 @@ namespace irc
                 std::string _send;
             };
 
-            // user_name??
             struct pending_socket
             {
                 std::string     nickname;
@@ -156,11 +155,8 @@ namespace irc
                 }
             };
             
-
         public:
-            // Only ctor actually used
-            Server( const char * port_number, const char * input_pass ); // TODO: add password as a second parameter
-
+            Server( const char * port_number, const char * input_pass ); 
             ~Server();
 
             void set_password( const std::string new_password );
@@ -192,13 +188,9 @@ namespace irc
                 void cmd_caller( T identifier );
 
             void privmsg_hashtag_case(std::string command_line, User *input_user);
-
             int * pass_hash(std::string input_pass );
-           
-            // void send_header(User * input_user) const;
             std::string * user_create(unnamed_users_iterator_t valid_unnamed_user);
             void disconnect_user(User * target_user); 
-
             void try_sending_data( void );
 
             std::string head(const User *input_user);
