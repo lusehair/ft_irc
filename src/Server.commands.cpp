@@ -777,7 +777,7 @@ std::string *    irc::Server::cmd_part(const int input_socket, const std::string
     if (reason_begin != command_line.npos) {
         reason = command_line.substr(reason_begin - 1, command_line.length() - reason_begin + 2);
     } else {
-        reason = "\r\n";
+        reason = + " :" + input_user->_nickname + "\r\n";
     }
 
     std::string channel_name;
