@@ -18,6 +18,8 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(KILL, &irc::Server::cmd_kill));
     (irc::Server::_commands).insert(std::make_pair(OPER, &irc::Server::cmd_oper));
     (irc::Server::_commands).insert(std::make_pair(PART, &irc::Server::cmd_part));
+    (irc::Server::_commands).insert(std::make_pair(MODE, &irc::Server::cmd_mode));
+
 }
 
 
@@ -679,7 +681,7 @@ std::string *    irc::Server::cmd_part(const int input_socket, const std::string
     if (reason_begin != command_line.npos) {
         reason = command_line.substr(reason_begin - 1, command_line.length() - reason_begin + 2);
     } else {
-        reason = " :" + input_user->_nickname + "\r\n";
+        reason = "\r\n";
     }
 
     std::string channel_name;
@@ -737,8 +739,18 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     running_channels_iterator_t running_channels_iterator =  _running_channels.find(chan);  
     if(running_channels_iterator == _running_channels.end())
     {
-        puts("still here");
-        ERR_NOSUCHCHANNEL(input_user, chan); // add the response to the user
+        //puts("still here");
+        //ERR_NOSUCHCHANNEL(input_user, chan); // add the response to the user
+         input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, chan));
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return ; 
+    }
+    if(!input_user->if_is_on_chan(running_channels_iterator->second))
+    {
+         puts("_______cant send message");
+         input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, chan));
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return ;
     }
     std::map<User*, const bool>::iterator members_it; 
     for(members_it =  running_channels_iterator->second->_members.begin(); members_it !=  running_channels_iterator->second->_members.end() ; members_it++)
@@ -750,4 +762,36 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
         }
     }
     return ; 
+}
+
+std::string   * irc::Server::cmd_mode(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &input_user->_pending_data._recv;;
+    }
+    size_t start = command_line.find("#"); 
+    
+    // we process only channel case for now
+    if(start == std::string::npos)
+    {
+        return &input_user->_pending_data._recv;; 
+    }
+    start++; 
+    size_t end = command_line.find(" ", start); 
+    std::string channel = command_line.substr(start, end - start); 
+    running_channels_iterator_t running_channels_iterator =  _running_channels.find(channel);  
+    
+   
+
+    if(running_channels_iterator == _running_channels.end())
+    {
+        ERR_NOSUCHCHANNEL(input_user, channel);
+    }
+ 
+    std::string ret = head(input_user) + "324 " + input_user->_nickname + " #" + channel + " +n \r\n"; 
+    std::cout << "____THE MODE FUN ->|" << ret << "|<--\n";  
+    input_user->_pending_data._send.append(ret); 
+    _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
+    return &input_user->_pending_data._recv;
 }

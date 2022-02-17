@@ -41,6 +41,7 @@ namespace irc
 
             void make_current(Channel * current_channel);
             void remove_channel(Channel * to_remove_channel);
+            bool if_is_on_chan(const Channel * input_channel); 
 
     };
 
