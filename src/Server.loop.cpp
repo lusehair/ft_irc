@@ -113,7 +113,8 @@ irc::Server::loop( void )
                         pending_socket_iterator->second._pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
                         {
-                            std::cout << "Total pending packet:\n" << pending_socket_iterator->second._pending_data._recv;
+                            std::cout << pending_socket_iterator->first << " Server <------| " <<  pending_socket_iterator->second._pending_data._recv;
+                            //std::cout << "Total pending packet:\n" << pending_socket_iterator->second._pending_data._recv;
                         }
 
                         tmp_pending_socket_iterator = pending_socket_iterator;
@@ -166,7 +167,8 @@ irc::Server::loop( void )
                         connected_user_iterator->second->_pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
                         {
-                            std::cout << "Total pending packet:\n" << connected_user_iterator->second->_pending_data._recv;
+                            std::cout << connected_user_iterator->second->_own_socket << " ----> Server |" <<  connected_user_iterator->second->_pending_data._recv;
+                            //std::cout << "Total pending packet:\n" << connected_user_iterator->second->_pending_data._recv;
                         }
 
                         tmp_connected_user_iterator = connected_user_iterator;
@@ -212,8 +214,9 @@ irc::Server::try_sending_data( void )
         last_end_of_line = end_of_line = 0;
 
         while ((end_of_line = data_to_send_it->second->find("\r\n", end_of_line)) != data_to_send_it->second->npos) {
-            end_of_line += 2;
-std::cout << "sent data:_______" << std::string(data_to_send_it->second->data() + last_end_of_line, end_of_line - last_end_of_line);
+            end_of_line += 2; 
+    std::cout << "Server -->  " << data_to_send_it->first << ": " << data_to_send_it->second->data(); 
+// std::cout << "sent data:_______" << std::string(data_to_send_it->second->data() + last_end_of_line, end_of_line - last_end_of_line);
             if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data() + last_end_of_line, end_of_line - last_end_of_line, 0)) == -1) {
                 break ;
             } else if (static_cast<size_t>(bytes_sent) != end_of_line - last_end_of_line) {
