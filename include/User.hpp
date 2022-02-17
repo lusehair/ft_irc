@@ -29,14 +29,11 @@ namespace irc
             partial_packet      _pending_data;
 
         private:
-            std::list<Channel *>   _joined_channels; // void * = const Channel *
-
+            std::list<Channel *>   _joined_channels; 
             User();
 
         public:
             User(const std::string nick, const std::string user, const int fd);
-            // User(const User * other);
-
             ~User();
 
             void make_current(Channel * current_channel);
