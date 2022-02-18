@@ -19,6 +19,8 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(OPER, &irc::Server::cmd_oper));
     (irc::Server::_commands).insert(std::make_pair(PART, &irc::Server::cmd_part));
     (irc::Server::_commands).insert(std::make_pair(MODE, &irc::Server::cmd_mode));
+    (irc::Server::_commands).insert(std::make_pair(WHO, &irc::Server::cmd_who));
+
 
 }
 
@@ -868,6 +870,29 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     return ; 
 }
 
+
+// Dirty work, need to check exception and the all cases of WHO cmd 
+std::string *irc::Server::cmd_who(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &input_user->_pending_data._recv;;
+    }
+
+    size_t start = command_line.find("#"); 
+    if(start == std::string::npos) 
+    {
+        return &input_user->_pending_data._recv;;
+    }
+    puts("Hello"); 
+    std::string ret = head(input_user) + "315 " + input_user->_nickname + " " + input_user->_username + " :End of /WHO list\r\n";
+    input_user->_pending_data._send.append(ret);
+    
+    _pending_sends.insert(std::make_pair(input_socket, &input_user->_pending_data._send));
+    return &input_user->_pending_data._recv;
+
+}
+
 std::string   * irc::Server::cmd_mode(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
@@ -894,7 +919,6 @@ std::string   * irc::Server::cmd_mode(const int input_socket, const std::string 
     }
  
     std::string ret = head(input_user) + "324 " + input_user->_nickname + " #" + channel + " +n \r\n"; 
-    std::cout << "____THE MODE FUN ->|" << ret << "|<--\n";  
     input_user->_pending_data._send.append(ret); 
     _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
     return &input_user->_pending_data._recv;
