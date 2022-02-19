@@ -24,7 +24,7 @@ CPPFLAGS					:= -Wall -Wextra -Werror -std=c++98
 DEPFLAGS					:= -MMD -MP
 
 ifeq ($(shell uname -s), Linux)
-	CPPFLAGS += -D LINUX
+	CPPFLAGS += -DLINUX
 endif
 
 R							:= rm -f

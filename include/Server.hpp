@@ -91,9 +91,9 @@
 # define CMD_CLOSED_SOCKET true
 
 # ifdef LINUX
-#  define OS_NOEXCEPT _NOEXCEPT
-# else
 #  define OS_NOEXCEPT _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT
+# else
+#  define OS_NOEXCEPT _NOEXCEPT
 # endif
 
 #include "User.hpp"
