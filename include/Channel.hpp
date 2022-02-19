@@ -24,8 +24,7 @@ namespace irc
             Server &                            _server_master;
             const std::string                   _name;
             // std::string                         _topic;
-            int                                 _members_count;
-
+            
             Channel();
             Channel(const Channel & other);
             Channel & operator = (const Channel & other);
@@ -36,7 +35,7 @@ namespace irc
             Channel(irc::Server & server, irc::User * channel_operator, const std::string channel_name);
 
             ~Channel();
-
+            int                                 _members_count;
             const std::string & get_name( void ) const;
             std::string const getName(); 
             void add_user(irc::User * new_member);
