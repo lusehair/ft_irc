@@ -20,8 +20,12 @@ DEPS						:= \
 	$(OBJS:.o=.d)
 
 C							:= clang++
-CPPFLAGS					:= -g -Wall -Wextra -Werror -std=c++98 
+CPPFLAGS					:= -Wall -Wextra -Werror -std=c++98 
 DEPFLAGS					:= -MMD -MP
+
+ifeq ($(shell uname -s), Linux)
+	CPPFLAGS += -D LINUX
+endif
 
 R							:= rm -f
 
@@ -31,7 +35,7 @@ $(BUILD_DIR)/%.cpp.o:		%.cpp
 
 all:						$(NAME)
 
-debug: CFLAGS += -DDEBUG -g
+debug: CPPFLAGS += -DDEBUG -g
 debug: all
 
 $(NAME):					$(OBJS)
