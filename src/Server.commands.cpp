@@ -566,7 +566,6 @@ irc::Server::cmd_quit(const int input_socket, const std::string command_line, Us
 }
 
 
-
 std::string   *irc::Server::cmd_list(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
@@ -579,10 +578,9 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
     size_t cases = command_line.find("#");
     if(cases == std::string::npos)
     {
-        std::string ret_list; 
         for(running_channel_iterator = _running_channels.begin(); running_channel_iterator != _running_channels.end() ; running_channel_iterator++)
         {
-            ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
+            ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + " " + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
         }
        
     }
