@@ -49,8 +49,8 @@ irc::Server::loop( void )
                     {
                         close(new_client_socket);
                     }
-# endif
                     else
+# endif
                     {
                         fcntl(new_client_socket, F_SETFL, O_NONBLOCK);
 
