@@ -8,7 +8,7 @@
             "type": "lldb-vscode",
             "request": "launch",
             "name": "Debug",
-            "program": "/Users/clkuznie/Documents/ft_irc_lucas/ircserv",
+            "program": "/Users/lusehair/ft_irc/ircserv",
             "args": [ "6667", "toto"],
         }
     ]

@@ -48,3 +48,9 @@ irc::Channel::getName(void)
 {
     return (_name);
 }
+
+int 
+irc::Channel::get_members_count( void ) const
+{
+    return (_members_count);
+}

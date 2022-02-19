@@ -17,6 +17,12 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(PRIVMSG, &irc::Server::cmd_privmsg));
     (irc::Server::_commands).insert(std::make_pair(KILL, &irc::Server::cmd_kill));
     (irc::Server::_commands).insert(std::make_pair(OPER, &irc::Server::cmd_oper));
+    (irc::Server::_commands).insert(std::make_pair(PART, &irc::Server::cmd_part));
+    (irc::Server::_commands).insert(std::make_pair(MODE, &irc::Server::cmd_mode));
+    (irc::Server::_commands).insert(std::make_pair(WHO, &irc::Server::cmd_who));
+    (irc::Server::_commands).insert(std::make_pair(LIST, &irc::Server::cmd_list));    
+
+
 }
 
 /**
@@ -507,73 +513,50 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
 // }
 
 
-// void    irc::Server::cmd_list(const int input_socket, const std::string command_line, User * input_user)
-// {
-//     if(input_user == NULL)
-//     {
-//         send(input_socket, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0);
-//         return ; 
-//     }
-    
-//     send(input_socket, RPL_LISTSTART, strlen(RPL_LISTSTART), 0);
-//     if(command_line.find("#") == std::string::npos)
-//     {
-//         std::string ret_list; 
-//         for(std::set<void *>::iterator running_channel_iterator = _running_channels.begin(); running_channel_iterator != running_channel_iterator.end() ; running_channel_iterator++)
-//         {
-//            ret_list = running_channel_iterator->_name; 
-//            ret_list+= " "; 
-//            ret_list+= running_channel_iterator->_members_count;
+std::string   *irc::Server::cmd_list(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
+    }
 
-//            if(!running_channel_iterator->_topic.empty)
-//            {
-//                ret_list+= " "; 
-//                ret_list+= running_channel_iterator->_topic;
-//            }
-//            ret_list+= '\n';
-//            send(input_socket, ret_list.c_str(), ret_list.size(), 0);
-//            ret_list.clear();
-//         }
-//         return;
-//     }
-//     else
-//     {
-//         size_t pos = 0;  
-//         size_t running_channel_iteratorerate;
-//         std::string requiere_chan; 
-//         size_t end; 
-//         std::set<std::string>::iterator running_channel_iterator;
-//         std::string ret_list;
+    std::string ret_list; 
+    running_channels_iterator_t running_channel_iterator; 
+    size_t cases = command_line.find("#");
+    if(cases == std::string::npos)
+    {
+        
+                        puts("e44444hllo");
 
-//         while((running_channel_iteratorerate = command_line.find_first_of("#", pos)) != std::string::npos)
-//         {
-//             end = command_line.find_first_of(" ", running_channel_iteratorerate); 
-//             requiere_chan = command_line.substr(running_channel_iteratorerate, end - running_channel_iteratorerate); 
-//             running_channel_iterator = _running_channels.find(requiere_chan); 
-            
-//             if(running_channel_iterator != _running_channels.end())
-//             {
-//                 ret_list = running_channel_iterator->_name; 
-//                 ret_list+= " "; 
-//                 ret_list+= running_channel_iterator->_members_count;
-
-//                 if(!running_channel_iterator->_topic.empty)
-//                 {
-//                     ret_list+= " "; 
-//                     ret_list+= chan->it_topic;
-//                 }
-
-//                 ret_list+= '\n';
-//                 send(input_socket, ret_list.c_str(), ret_list.size(), 0);
-//                 ret_list.clear();
-//             }
-
-//             pos = running_channel_iteratorerate + 1; 
-//             requiere_chan.clear(); 
-//         }
-//     }
-//     send(input_socket, RPL_LISTEND, strlen(RPL_LISTEND), 0);
-// }
+        std::string ret_list; 
+        for(running_channel_iterator = _running_channels.begin(); running_channel_iterator != _running_channels.end() ; running_channel_iterator++)
+        {
+            ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
+        }
+       std::cout << "___list " << ret_list; 
+       
+    }
+    else
+    {
+        size_t pos = 0; 
+        while((command_line.find_first_of("#", pos)) != std::string::npos)
+        {
+            size_t start = pos + 1; 
+            size_t end = command_line.find(" ", start); 
+            std::string require_channel = command_line.substr(start, end - start); 
+            if ((running_channel_iterator = _running_channels.find(require_channel)) != _running_channels.end())
+            {
+                ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
+            }
+            pos = end; 
+        }
+    }
+    ret_list.append(RPL_LISTEND(input_user, input_user->_nickname)); 
+  
+    input_user->_pending_data._send.append(ret_list);
+    _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
+    return &input_user->_pending_data._recv; 
+}
 
 
 // void    irc::Server::cmd_kick(const int input_socket, const std::string command_line, User * input_user)
@@ -716,13 +699,46 @@ std::string *    irc::Server::cmd_join(const int input_socket, const std::string
 }
 
 
-/**
- * @brief Utils function who's call when we want to send a message in a channel 
- * 
- * @param command_line 
- * @param input_user 
- */
-void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_user)
+void
+irc::Server::make_user_part(User * input_user, const std::string channel_name, const std::string reason)
+{
+    std::string channel_part_notice = PART_NOTICE(input_user, channel_name, reason);
+    //std::cout << "-------------------" << channel_part_notice;
+    running_channels_iterator_t running_channels_iterator;
+    running_channels_iterator = _running_channels.find(channel_name);
+
+    if (running_channels_iterator != _running_channels.end())
+    {
+        if (running_channels_iterator->second->_members.find(input_user)
+                != running_channels_iterator->second->_members.end())
+        {
+            running_channels_iterator_t tmp = running_channels_iterator;
+            ++running_channels_iterator;
+            for(std::map<User *, const bool>::iterator members_it = tmp->second->_members.begin();
+                    members_it !=  tmp->second->_members.end();
+                    ++members_it)
+            {
+                members_it->first->_pending_data._send.append(channel_part_notice);
+                _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
+            }
+            LOG_LEFTCHAN(_raw_start_time, input_user->_nickname, channel_name);
+            tmp->second->kick_user(input_user);
+        }
+        else
+        {
+            input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, channel_name));
+            _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        }
+    }
+    else
+    {
+        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, channel_name));
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+    }
+}
+
+
+std::string *    irc::Server::cmd_part(const int input_socket, const std::string command_line, User * input_user)
 {
     size_t start = command_line.find("#") + 1;
     size_t end = command_line.find(" ", start); 
@@ -785,5 +801,95 @@ std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::str
 
     user_it->second->_pending_data._send.append(ret);
     _pending_sends.insert(std::make_pair(user_it->second->_own_socket, &(user_it->second->_pending_data._send)));
+    return &input_user->_pending_data._recv;
+}
+
+
+void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_user)
+{
+    size_t start = command_line.find("#") + 1;
+    size_t end = command_line.find(" ", start); 
+    std::string chan = command_line.substr(start, end - start); 
+    
+    running_channels_iterator_t running_channels_iterator =  _running_channels.find(chan);  
+    if(running_channels_iterator == _running_channels.end())
+    {
+         input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, chan));
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return ; 
+    }
+    if(!input_user->if_is_on_chan(running_channels_iterator->second))
+    {
+         input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, chan));
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
+        return ;
+    }
+    std::map<User*, const bool>::iterator members_it; 
+    for(members_it =  running_channels_iterator->second->_members.begin(); members_it !=  running_channels_iterator->second->_members.end() ; members_it++)
+    {
+        if(members_it->first != input_user)
+        {
+            members_it->first->_pending_data._send.append(command_line); 
+            _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
+        }
+    }
+    LOG_SENDMSGTOCHAN(_raw_start_time, input_user->_nickname, chan, command_line); 
+    return ; 
+}
+
+
+// Dirty work, need to check exception and the all cases of WHO cmd 
+std::string *irc::Server::cmd_who(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &input_user->_pending_data._recv;;
+    }
+
+    size_t start = command_line.find("#"); 
+    if(start == std::string::npos) 
+    {
+        return &input_user->_pending_data._recv;;
+    }
+    std::string ret = head(input_user) + "315 " + input_user->_nickname + " " + input_user->_username + " :End of /WHO list\r\n";
+    input_user->_pending_data._send.append(ret);
+    
+    _pending_sends.insert(std::make_pair(input_socket, &input_user->_pending_data._send));
+    return &input_user->_pending_data._recv;
+
+}
+
+std::string   * irc::Server::cmd_mode(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &input_user->_pending_data._recv;;
+    }
+    size_t start = command_line.find("#"); 
+    std::string ret; 
+    // case if the mode request is on the connection 
+    if(start == std::string::npos)
+    {
+        start = strlen(MODE) + 1;
+        size_t end = command_line.find(" ", start);  
+        std::string nickname = command_line.substr(start, end - start); 
+        
+        ret = head(input_user) + "221" + " " + nickname + " +wi\r\n"; 
+        std::cout  << "___THE_RET----->" << ret; 
+        return &input_user->_pending_data._recv; 
+    }
+    start++;
+    size_t end = command_line.find(" ", start);
+    std::string channel = command_line.substr(start, end - start);
+    running_channels_iterator_t running_channels_iterator =  _running_channels.find(channel);
+
+    if(running_channels_iterator == _running_channels.end())
+    {
+        ERR_NOSUCHCHANNEL(input_user, channel);
+    }
+
+    ret = head(input_user) + "324 " + input_user->_nickname + " #" + channel + " +n \r\n";
+    input_user->_pending_data._send.append(ret);
+    _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
     return &input_user->_pending_data._recv;
 }
