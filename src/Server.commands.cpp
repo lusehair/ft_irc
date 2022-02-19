@@ -209,7 +209,7 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
         }
     }
 
-    LOG_PASSSUCCESS(_raw_start_time, input_socket); 
+    LOG_PASSSUCCESS(_raw_start_time, input_socket);
     
     current_unnamed_user->second.pass_check = true;
     delete(hash_pass);
@@ -234,6 +234,9 @@ irc::Server::user_create(unnamed_users_iterator_t valid_unnamed_user)
     _connected_users.insert(std::make_pair(new_user->_nickname, new_user));
     _unnamed_users.erase(valid_unnamed_user->first);
 
+
+    // std::string nick_confirm = ": NICK : | " + (_connected_users.find(new_user->_nickname))->first + " | " + username + " |\r\n";
+    new_user->_pending_data._send.append(": NICK :" + new_user->_nickname + "\r\n");
     new_user->_pending_data._send.append(reply(new_user, "001", "Hello from irc server\r\n"));
 
     if (_pending_sends.insert(std::make_pair(new_user->_own_socket, &(new_user->_pending_data._send))).second != true) 
@@ -909,11 +912,14 @@ std::string   * irc::Server::cmd_mode(const int input_socket, const std::string 
     }
     size_t start = command_line.find("#"); 
     
-    // we process only channel case for now
-    if(start == std::string::npos)
-    {
-        return &input_user->_pending_data._recv;; 
-    }
+    // case if the mode request is on the connection 
+    // if(start == std::string::npos)
+    // {
+    //     start = strlen(MODE) + 2;
+    //     size_t end = command_line.find(" ", pos);  
+    //     std::string nickname = command_line.substr()
+    //     return &input_user->_pending_data._recv; 
+    // }
     start++;
     size_t end = command_line.find(" ", start);
     std::string channel = command_line.substr(start, end - start);
