@@ -19,6 +19,8 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(OPER, &irc::Server::cmd_oper));
     (irc::Server::_commands).insert(std::make_pair(PART, &irc::Server::cmd_part));
     (irc::Server::_commands).insert(std::make_pair(MODE, &irc::Server::cmd_mode));
+    (irc::Server::_commands).insert(std::make_pair(WHO, &irc::Server::cmd_who));
+
 
 }
 
@@ -647,7 +649,16 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
  */
 void irc::Server::send_names(User * input_user, Channel * channel_target)
 {
-    std::string ret = head(input_user) + "353 " + input_user->_nickname + " = #" + channel_target->getName()+ " :" + input_user->_nickname;
+    std::string ret = head(input_user) + "353 " + input_user->_nickname + " = #" + channel_target->getName()+ " :";
+    if(channel_target->_members.find(input_user)->second)
+    {
+        ret.append( '@' + input_user->_nickname); 
+    }
+    else 
+    {
+        ret.append(input_user->_nickname);
+    }
+
     std::map<User*, const bool>::iterator members_it; 
     std::string notify = head(input_user) + "JOIN :#" + channel_target->getName() + "\r\n";
     for(members_it =  channel_target->_members.begin(); members_it !=  channel_target->_members.end() ; members_it++)
@@ -661,7 +672,6 @@ void irc::Server::send_names(User * input_user, Channel * channel_target)
             {
                 ret.append(" " + members_it->first->_nickname);
             }
-            
             else 
             {
                 ret.append(" @" + members_it->first->_nickname);
@@ -738,17 +748,22 @@ irc::Server::make_user_part(User * input_user, const std::string channel_name, c
             ++running_channels_iterator;
             for(std::map<User *, const bool>::iterator members_it = tmp->second->_members.begin();
                     members_it !=  tmp->second->_members.end();
-                    ++members_it) {
+                    ++members_it)
+            {
                 members_it->first->_pending_data._send.append(channel_part_notice);
                 _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
             }
             LOG_LEFTCHAN(_raw_start_time, input_user->_nickname, channel_name);
             tmp->second->kick_user(input_user);
-        } else {
+        }
+        else
+        {
             input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, channel_name));
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         }
-    } else {
+    }
+    else
+    {
         input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, channel_name));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
     }
@@ -765,14 +780,18 @@ std::string *    irc::Server::cmd_part(const int input_socket, const std::string
     size_t next_comma = 0;
     size_t reason_begin = command_line.find(':');
     std::string reason;
-    if (reason_begin != command_line.npos) {
+    if (reason_begin != command_line.npos)
+    {
         reason = command_line.substr(reason_begin - 1, command_line.length() - reason_begin + 2);
-    } else {
+    }
+    else
+    {
         reason = + " :" + input_user->_nickname + "\r\n";
     }
 
     std::string channel_name;
-    while ((next_comma = command_line.find(',', next_comma)) < reason_begin) {
+    while ((next_comma = command_line.find(',', next_comma)) < reason_begin)
+    {
         channel_name = command_line.substr(command_line.find_last_of(", ", next_comma) + 1, next_comma);
         make_user_part(input_user, channel_name, reason);
         ++next_comma;
@@ -859,6 +878,29 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     return ; 
 }
 
+
+// Dirty work, need to check exception and the all cases of WHO cmd 
+std::string *irc::Server::cmd_who(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &input_user->_pending_data._recv;;
+    }
+
+    size_t start = command_line.find("#"); 
+    if(start == std::string::npos) 
+    {
+        return &input_user->_pending_data._recv;;
+    }
+    puts("Hello"); 
+    std::string ret = head(input_user) + "315 " + input_user->_nickname + " " + input_user->_username + " :End of /WHO list\r\n";
+    input_user->_pending_data._send.append(ret);
+    
+    _pending_sends.insert(std::make_pair(input_socket, &input_user->_pending_data._send));
+    return &input_user->_pending_data._recv;
+
+}
+
 std::string   * irc::Server::cmd_mode(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
@@ -872,21 +914,18 @@ std::string   * irc::Server::cmd_mode(const int input_socket, const std::string 
     {
         return &input_user->_pending_data._recv;; 
     }
-    start++; 
-    size_t end = command_line.find(" ", start); 
-    std::string channel = command_line.substr(start, end - start); 
-    running_channels_iterator_t running_channels_iterator =  _running_channels.find(channel);  
-    
-   
+    start++;
+    size_t end = command_line.find(" ", start);
+    std::string channel = command_line.substr(start, end - start);
+    running_channels_iterator_t running_channels_iterator =  _running_channels.find(channel);
 
     if(running_channels_iterator == _running_channels.end())
     {
         ERR_NOSUCHCHANNEL(input_user, channel);
     }
- 
-    std::string ret = head(input_user) + "324 " + input_user->_nickname + " #" + channel + " +n \r\n"; 
-    std::cout << "____THE MODE FUN ->|" << ret << "|<--\n";  
-    input_user->_pending_data._send.append(ret); 
+
+    std::string ret = head(input_user) + "324 " + input_user->_nickname + " #" + channel + " +n \r\n";
+    input_user->_pending_data._send.append(ret);
     _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
     return &input_user->_pending_data._recv;
 }
