@@ -27,10 +27,11 @@ namespace irc
             std::string         _username;
             bool                _isOperator;
             partial_packet      _pending_data;
+            std::list<Channel *>   _joined_channels;
 
         private:
-            std::list<Channel *>   _joined_channels; 
             User();
+            User & operator = (const User & other);
 
         public:
             User(const std::string nick, const std::string user, const int fd);

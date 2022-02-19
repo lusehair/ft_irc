@@ -32,7 +32,6 @@ irc::User::remove_channel(Channel * to_remove_channel)
 bool
 irc::User::if_is_on_chan(const Channel * input_channel)
 {
-    
     std::list<Channel *>::iterator channel_it = std::find(_joined_channels.begin(), _joined_channels.end(), input_channel); 
     if(channel_it != _joined_channels.end())
     {

@@ -81,10 +81,10 @@
 
 # define RPL_LISTSTART "321"
 # define RPL_LISTEND "323"
-# define RPL_YOUREOPER(USERC) head(USERC) + "381 :You are now an IRC operator\r\n"
+# define RPL_YOUREOPER(USERC) head(USERC) + "381 " + USERC->_nickname + " :You are now an IRC operator\r\n"
 
-# define MSG_KILL(USERC, REASON) head(USERC) + "KILL :" + REASON + "\r\n"
-# define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT :" + REASON + "\r\n"
+# define MSG_KILL(USERC, REASON) head(USERC) + "KILL" + REASON + "\r\n"
+# define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT" + REASON + "\r\n"
 
 # define PART_NOTICE(USERC, CHAN, REASON) head(USERC) + "PART #" + CHAN + REASON;
 
@@ -213,7 +213,7 @@ namespace irc
             std::string head(const User *input_user);
             void send_names(User * input_user, Channel * channel_target);
             std::string reply(const User * input_user ,  const char * code, std::string message) const;
-
+            void quit_all_chan(User * target, std::string & reason);
     };
 
 }
