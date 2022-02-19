@@ -43,12 +43,14 @@ irc::Server::loop( void )
 
                 if ((new_client_socket = accept(_listening_socket, new_client_address.ai_addr, &new_client_address.ai_addrlen)) != -1)
                 {
+# ifndef LINUX
                     int optval = 1;
                     if (setsockopt(_listening_socket, SOL_SOCKET, SO_NOSIGPIPE, &optval, sizeof(optval)) != 0)
                     {
                         close(new_client_socket);
                     }
                     else
+# endif
                     {
                         fcntl(new_client_socket, F_SETFL, O_NONBLOCK);
 
@@ -220,7 +222,7 @@ irc::Server::try_sending_data( void )
 
         if (last_end_of_line != 0) {
             std::cout << "Server -->  " << data_to_send_it->first << ": " << data_to_send_it->second->data();
-            if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data(), last_end_of_line, 0)) == -1) {
+            if ((bytes_sent = send(data_to_send_it->first, data_to_send_it->second->data(), last_end_of_line, OS_SENDOPT)) == -1) {
                 break ;
             } else if (static_cast<size_t>(bytes_sent) != last_end_of_line) {
                 last_end_of_line = bytes_sent;

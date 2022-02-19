@@ -90,6 +90,14 @@
 
 # define CMD_CLOSED_SOCKET true
 
+# ifndef LINUX
+#  define OS_NOEXCEPT _NOEXCEPT
+#  define OS_SENDOPT 0
+# else
+#  define OS_NOEXCEPT _GLIBCXX_TXN_SAFE_DYN _GLIBCXX_USE_NOEXCEPT
+#  define OS_SENDOPT MSG_NOSIGNAL
+# endif
+
 #include "User.hpp"
 #include "log.hpp"
 #include "Channel.hpp"
@@ -133,7 +141,7 @@ namespace irc
         private:
             struct CtorException : std::exception
             {
-                const char * what() const _NOEXCEPT
+                const char * what() const OS_NOEXCEPT
                 {
                     return "CtorException, check the logs!\n";
                 }
