@@ -78,9 +78,9 @@
 # define ERR_NICKNAMEINUSE(USERC, NICK, NEWNICK) head(USERC) + "433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
 # define RPL_ENDOFNAMES(USERC, NICK, CHAN) head(USERC) + "366 " + NICK + " #" + CHAN + " :End of /NAMES list\r\n"
 # define ERR_PASSWDMISMATCH(USERC) head(USERC) + "464 :Password incorrect\r\n"
-
+#define RPL_LIST(USERC, NICK, CHANNEL) head(input_user) + " 322" + " " + NICK + " #" + CHANNEL 
 # define RPL_LISTSTART "321"
-# define RPL_LISTEND "323"
+#define RPL_LISTEND(USERC, NICK) head(input_user) + " 323" + NICK + " :End of /LIST\r\n"
 # define RPL_YOUREOPER(USERC) head(USERC) + "381 :You are now an IRC operator\r\n"
 
 # define MSG_KILL(USERC, REASON) head(USERC) + "KILL :" + REASON + "\r\n"
