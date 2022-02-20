@@ -589,12 +589,12 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
         size_t pos = 0; 
         while((command_line.find_first_of("#", pos)) != std::string::npos)
         {
-            size_t start = pos + 1; 
+            size_t start = pos + 2; 
             size_t end = command_line.find(" ", start); 
             std::string require_channel = command_line.substr(start, end - start); 
             if ((running_channel_iterator = _running_channels.find(require_channel)) != _running_channels.end())
             {
-                ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
+                ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + " " + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
             }
             pos = end; 
         }
