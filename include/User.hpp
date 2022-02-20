@@ -28,6 +28,7 @@ namespace irc
             bool                _isOperator;
             partial_packet      _pending_data;
             std::list<Channel *>   _joined_channels;
+            bool                   _already_dead; 
 
         private:
             User();

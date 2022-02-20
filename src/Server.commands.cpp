@@ -175,6 +175,12 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
         return &input_user->_pending_data._recv;
     }
 
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
+
     unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
     _opened_sockets.insert(input_socket);
 
@@ -348,6 +354,12 @@ std::string * irc::Server::cmd_user(const int input_socket, const std::string co
         return &input_user->_pending_data._recv;
     }
 
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
+
     std::map<int, pending_socket>::iterator current_unnamed_user = _unnamed_users.find(input_socket);
 
     if (current_unnamed_user->second.pass_check != true) 
@@ -395,7 +407,12 @@ std::string *    irc::Server::cmd_ping(const int input_socket, const std::string
         LOG_PONGNOREGISTERUSER(_raw_start_time, input_socket);
         send(input_socket, ERR_NOTREGISTERED, strlen(ERR_NOTREGISTERED), 0); 
     }
-    
+
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
     std::string ret = head(input_user) + "PONG :" + command_line.substr(command_line.find(" ") + 1, command_line.size() - command_line.find(" ") + 1) + "\r\n";  
     LOG_PONGUSERPING(_raw_start_time, input_user->_nickname);
     
@@ -419,6 +436,11 @@ irc::Server::cmd_oper(const int input_socket, const std::string command_line, Us
     if(input_user == NULL)
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
+    }
+
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
     }
 
     size_t first_space_pos = command_line.find(" ");
@@ -480,6 +502,11 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
 
+    if(input_user->_already_dead)
+    {
+             return &input_user->_pending_data._recv;
+    }
+
     if(!input_user->_isOperator)
     {
         LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
@@ -532,6 +559,12 @@ irc::Server::cmd_quit(const int input_socket, const std::string command_line, Us
         FD_CLR(current_unnamed_user->first, &_client_sockets);
         close(current_unnamed_user->first);
     }
+    
+    else if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
     else
     {
         size_t reason_begin = command_line.find(':');
@@ -573,6 +606,10 @@ std::string *irc::Server::cmd_notice(const int input_socket, const std::string c
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
+    if(input_user->_already_dead)
+    {
+       return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
+    }
 
     size_t start = command_line.find(" ") + 1;
     size_t end = command_line.find(":") - 1;
@@ -600,6 +637,12 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
+
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
 
     std::string ret_list; 
     running_channels_iterator_t running_channel_iterator; 
@@ -744,6 +787,12 @@ std::string *    irc::Server::cmd_join(const int input_socket, const std::string
         return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
 
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
+
     size_t next_comma, next_space, next_hashtag = 0;
     std::string channel_name;
     running_channels_iterator_t running_channels_iterator;
@@ -819,6 +868,12 @@ std::string *    irc::Server::cmd_part(const int input_socket, const std::string
         return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
 
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
+
     size_t next_comma = 0;
     size_t reason_begin = command_line.find(':');
     std::string reason;
@@ -858,6 +913,12 @@ std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::str
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
+
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
 
     size_t start = command_line.find(" ") + 1;
     size_t end = command_line.find(":") - 1;
@@ -928,6 +989,12 @@ std::string *irc::Server::cmd_who(const int input_socket, const std::string comm
     {
         return &input_user->_pending_data._recv;;
     }
+
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
 
     size_t start = command_line.find("#"); 
     if(start == std::string::npos) 

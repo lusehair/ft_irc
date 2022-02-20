@@ -4,6 +4,7 @@ irc::User::User(const std::string nickname, const std::string username, const in
     : _own_socket(socket)
     , _nickname(nickname)
     , _username(username)
+    , _already_dead(false)
 {
 }
 
