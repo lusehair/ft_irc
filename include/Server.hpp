@@ -66,6 +66,7 @@
 # define PART "PART"
 # define MODE "MODE"
 # define WHO "WHO"
+#define NOTICE "NOTICE"
 
 # define ERR_NEEDMOREPARAMS(USERC, NICK, CMD) head(USERC) + "461 " + NICK + " " + CMD + " :Not enough parameters\r\n"
 # define ERR_ALREADYREGISTRED(USERC, NICK) head(USERC) + "462 " + NICK + " :You may not reregister\r\n"     
@@ -199,6 +200,8 @@ namespace irc
             std::string * cmd_privmsg(const int input_socket, const std::string command_line, User * input_user );
             std::string * cmd_mode(const int input_socket, const std::string command_line, User * input_user); 
             std::string * cmd_who(const int input_socket, const std::string command_line, User * input_user); 
+            std::string * cmd_notice(const int input_socket, const std::string command_line, User *input_user);
+
             template < typename T >
                 void cmd_caller( T identifier );
 

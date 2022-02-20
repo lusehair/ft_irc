@@ -22,6 +22,7 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(WHO, &irc::Server::cmd_who));
     (irc::Server::_commands).insert(std::make_pair(QUIT, &irc::Server::cmd_quit));
     (irc::Server::_commands).insert(std::make_pair(LIST, &irc::Server::cmd_list));
+    (irc::Server::_commands).insert(std::make_pair(NOTICE, &irc::Server::cmd_notice));
 }
 
 /**
@@ -564,6 +565,33 @@ irc::Server::cmd_quit(const int input_socket, const std::string command_line, Us
     }
     return NULL;
 }
+
+
+std::string *irc::Server::cmd_notice(const int input_socket, const std::string command_line, User *input_user)
+{
+    if(input_user == NULL) 
+    {
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
+    }
+
+    size_t start = command_line.find(" ") + 1;
+    size_t end = command_line.find(":") - 1;
+    
+    std::string sender = input_user->_nickname; 
+    std::string reciever = command_line.substr(start, end - start);
+    std::string ret = head(input_user) + command_line + "\r\n"; 
+    
+    std::map<std::string , User * >::iterator user_it = _connected_users.find(reciever);
+    if(user_it == _connected_users.end())
+    {
+        return &input_user->_pending_data._recv;         
+    }
+
+    user_it->second->_pending_data._send.append(ret);
+    _pending_sends.insert(std::make_pair(user_it->second->_own_socket, &(user_it->second->_pending_data._send)));
+    return &input_user->_pending_data._recv;
+}
+
 
 
 std::string   *irc::Server::cmd_list(const int input_socket, const std::string command_line, User * input_user)
