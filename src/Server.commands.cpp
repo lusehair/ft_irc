@@ -541,6 +541,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
     LOG_KILLWITHPRIV(_raw_start_time, input_user->_nickname, target);
     connected_user_iterator->second->_pending_data._send.append(MSG_KILL(input_user, reason));
     _pending_sends.insert(std::make_pair(connected_user_iterator->second->_own_socket, &connected_user_iterator->second->_pending_data._send));
+    connected_user_iterator->second->_already_dead = true; 
     _to_kill_users.push_back(connected_user_iterator->second);
     quit_all_chan(connected_user_iterator->second, reason);
     return &input_user->_pending_data._recv;
