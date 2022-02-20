@@ -23,6 +23,8 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(QUIT, &irc::Server::cmd_quit));
     (irc::Server::_commands).insert(std::make_pair(LIST, &irc::Server::cmd_list));
     (irc::Server::_commands).insert(std::make_pair(NOTICE, &irc::Server::cmd_notice));
+    //(irc::Server::_commands).insert(std::make_pair(KICK, &irc::Server::cmd_kick));
+
 }
 
 /**
@@ -679,64 +681,6 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
 }
 
 
-// void    irc::Server::cmd_kick(const int input_socket, const std::string command_line, User * input_user)
-// {
-//     if (input_user == NULL)
-//     {
-//         LOG_KICKNOREGISTER(_raw_start_time, input_socket);
-//         send(input_socket, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
-//         return ;
-//     }
-    
-
-//     else if (std::count(command_line.begin(), command_line.end(), ' ') < 2 && command_line.find_last_of(' ') < command_line.size())
-//     {
-        
-//         LOG_NOPARAM(_raw_start_time, input_socket, command_line);
-//         send(input_socket, ERR_NEEDMOREPARAMS, strlen(ERR_NOPRIVILEGES), 0);
-//         return ;
-//     }
-    
-//     size_t start = strlen(KICK) + 2; 
-//     size_t end = command_line.find(' ',strlen(KICK) + 2); 
-//     std::string channel_target = command_line.substr(start, end  - (start -1));    
-//     start = end + 1; 
-    
-//     if(std::count(command_line.begin(), command_line.end(), ' ') > 2)
-//     {
-//         end = command_line.find(' ',strlen(KICK) + 2);
-//     }
-    
-//     else
-//     {
-//         end = command_line.size();
-//     }
-//     std::string user_target = command_line.substr(start, end - start);
-
-
-//     if(/* the chan doesn't exist */)
-//     {
-//         LOG_KICKUKNOWNCHAN(_raw_start_time, input_user->_nickname, channel_target);
-//         send(input_socket, ERR_NOSUCHCHANNEL, strlen(ERR_NOSUCHCHANNEL), 0); 
-//         return ;
-//     }
-//     else if(/* the target_user is not in the chan*/)
-//     {
-//         LOG_KICKNOTONTHECHAN(_raw_start_time, input_user->_nickname, user_target, channel_target); 
-//         send(input_socket, ERR_NOTONCHANNEL, strlen(ERR_NOTONCHANNEL), 0); 
-//         return ;
-//     }
-//     else if(/* the user doesn't have the op access to kick someone*/)
-//     {
-//         LOG_KICKWITHOUTOP(_raw_start_time, input_user->_nickname, channel_target); 
-//         send(input_socket, ERR_CHANOPRIVSNEEDED, strlen(ERR_CHANOPRIVSNEEDED), 0); 
-//         return ;
-//     }
-//     else 
-//     {
-//         // KICK THE USER 
-//     }
-// }
 
 
 /**
@@ -771,6 +715,62 @@ void irc::Server::send_names(User * input_user, Channel * channel_target)
     _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
 }
 
+
+std::string   *irc::Server::cmd_kick(const int input_socket, const std::string command_line, User * input_user)
+{
+    if(input_user == NULL)
+    {
+        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
+    }
+
+    if(input_user->_already_dead)
+    {
+        return &input_user->_pending_data._recv;
+    }
+
+    
+    size_t start = command_line.find("#") + 1; 
+    size_t end = command_line.find(" ", start); 
+    std::string channel = command_line.substr(start, end - start); 
+    running_channels_iterator_t running_channel_iterator = _running_channels.find(channel); 
+    
+    if(running_channel_iterator == _running_channels.end())
+    {
+        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, channel)); 
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
+        return &input_user->_pending_data._recv;
+    }
+
+    if(!input_user->_isOperator)
+    {
+        input_user->_pending_data._send.append(ERR_NOPRIVILEGES(input_user, channel)); 
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
+        return &input_user->_pending_data._recv;
+    }
+
+    std::string ret; 
+    std::string user; 
+    // case if just one user to kick 
+//    if(command_line.find(",") == std::string::npos)
+//    {
+       start = end + 1; 
+       end = command_line.find(" ", start);
+       user = command_line.substr(start, end - start); 
+       connected_users_iterator_t user_target = _connected_users.find(user);
+       std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
+       if (user_iterator == running_channel_iterator->second->_members.end())
+       {
+        input_user->_pending_data._send.append(ERR_USERNOTINCHANNEL(input_user->_nickname, user, channel)); 
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send))); 
+        return &input_user->_pending_data._recv;
+       }
+       else
+       {
+           privmsg_hashtag_case(command_line, input_user); 
+           running_channel_iterator->second->kick_user(user_iterator->first);
+           return &input_user->_pending_data._recv;
+       }
+}
 
 /**
  * @brief JOIN command is use to create a join an existing channel 

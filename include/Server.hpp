@@ -82,8 +82,8 @@
 #define RPL_LIST(USERC, NICK, CHANNEL) head(input_user) + "322" + " " + NICK + " #" + CHANNEL 
 # define RPL_LISTSTART "321"
 # define RPL_YOUREOPER(USERC) head(USERC) + "381 " + USERC->_nickname + " :You are now an IRC operator\r\n"
-#define RPL_LISTEND(USERC, NICK) head(input_user) + "323 " + NICK + " :End of /LIST\r\n"
-
+#define RPL_LISTEND(USERC, NICK) head(USERC) + "323 " + NICK + " :End of /LIST\r\n"
+# define ERR_USERNOTINCHANNEL(NICK, USERTARGET, CHAN) head(input_user) + "441" + " " + NICK + " " + USERTARGET + " #" + CHAN + " :They aren't on that channel\r\n"
 # define MSG_KILL(USERC, REASON) head(USERC) + "KILL" + REASON + "\r\n"
 # define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT" + REASON + "\r\n"
 
