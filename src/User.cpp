@@ -27,6 +27,7 @@ void
 irc::User::remove_channel(Channel * to_remove_channel)
 {
     _joined_channels.remove(to_remove_channel);
+    _isOperator = false; 
 }
 
 

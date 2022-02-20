@@ -23,7 +23,7 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(QUIT, &irc::Server::cmd_quit));
     (irc::Server::_commands).insert(std::make_pair(LIST, &irc::Server::cmd_list));
     (irc::Server::_commands).insert(std::make_pair(NOTICE, &irc::Server::cmd_notice));
-    //(irc::Server::_commands).insert(std::make_pair(KICK, &irc::Server::cmd_kick));
+    (irc::Server::_commands).insert(std::make_pair(KICK, &irc::Server::cmd_kick));
 
 }
 
@@ -177,10 +177,10 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
         return &input_user->_pending_data._recv;
     }
 
-    if(input_user->_already_dead)
-    {
-        return &input_user->_pending_data._recv;
-    }
+    // if(input_user->_already_dead)
+    // {
+    //     return &input_user->_pending_data._recv;
+    // }
 
 
     unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
@@ -356,10 +356,10 @@ std::string * irc::Server::cmd_user(const int input_socket, const std::string co
         return &input_user->_pending_data._recv;
     }
 
-    if(input_user->_already_dead)
-    {
-        return &input_user->_pending_data._recv;
-    }
+    // if(input_user->_already_dead)
+    // {
+    //     return &input_user->_pending_data._recv;
+    // }
 
 
     std::map<int, pending_socket>::iterator current_unnamed_user = _unnamed_users.find(input_socket);
@@ -751,8 +751,7 @@ std::string   *irc::Server::cmd_kick(const int input_socket, const std::string c
     std::string ret; 
     std::string user; 
     // case if just one user to kick 
-//    if(command_line.find(",") == std::string::npos)
-//    {
+
        start = end + 1; 
        end = command_line.find(" ", start);
        user = command_line.substr(start, end - start); 
@@ -760,13 +759,16 @@ std::string   *irc::Server::cmd_kick(const int input_socket, const std::string c
        std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
        if (user_iterator == running_channel_iterator->second->_members.end())
        {
+        puts("not here");
         input_user->_pending_data._send.append(ERR_USERNOTINCHANNEL(input_user->_nickname, user, channel)); 
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send))); 
         return &input_user->_pending_data._recv;
        }
        else
        {
-           privmsg_hashtag_case(command_line, input_user); 
+               puts("just here");
+
+           privmsg_hashtag_case(head(input_user)+command_line, input_user); 
            running_channel_iterator->second->kick_user(user_iterator->first);
            return &input_user->_pending_data._recv;
        }
@@ -962,7 +964,9 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return ; 
     }
-    if(!input_user->if_is_on_chan(running_channels_iterator->second))
+
+
+    if(!input_user->if_is_on_chan(running_channels_iterator->second) && command_line.find(KICK) == std::string::npos)
     {
          puts("_______cant send message");
          input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, chan));
@@ -972,9 +976,9 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     std::map<User*, const bool>::iterator members_it; 
     for(members_it =  running_channels_iterator->second->_members.begin(); members_it !=  running_channels_iterator->second->_members.end() ; members_it++)
     {
-        if(members_it->first != input_user)
+        if(members_it->first != input_user || command_line.find(KICK) != std::string::npos)
         {
-            members_it->first->_pending_data._send.append(command_line); 
+            members_it->first->_pending_data._send.append(command_line+"\r\n"); 
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
         }
     }
