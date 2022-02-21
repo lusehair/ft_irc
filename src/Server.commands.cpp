@@ -589,6 +589,8 @@ std::string *irc::Server::cmd_notice(const int input_socket, const std::string c
        return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
 
+
+
     size_t start = command_line.find(" ") + 1;
     size_t end = command_line.find(":") - 1;
     
@@ -596,6 +598,12 @@ std::string *irc::Server::cmd_notice(const int input_socket, const std::string c
     std::string reciever = command_line.substr(start, end - start);
     std::string ret = head(input_user) + command_line + "\r\n"; 
     
+    if(command_line.find("#") != std::string::npos)
+    {
+        privmsg_hashtag_case(ret, input_user); 
+        return &input_user->_pending_data._recv; 
+    }
+
     std::map<std::string , User * >::iterator user_it = _connected_users.find(reciever);
     if(user_it == _connected_users.end())
     {
@@ -925,20 +933,12 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return ; 
     }
-
-    if(!input_user->if_is_on_chan(running_channels_iterator->second) && command_line.find(KICK) == std::string::npos)
-    {
-         puts("_______cant send message");
-         input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, chan));
-        _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
-        return ;
-    }
     std::map<User*, const bool>::iterator members_it; 
     for(members_it =  running_channels_iterator->second->_members.begin(); members_it !=  running_channels_iterator->second->_members.end() ; members_it++)
     {
         if(members_it->first != input_user || command_line.find(KICK) != std::string::npos)
         {
-            members_it->first->_pending_data._send.append(command_line+"\r\n"); 
+            members_it->first->_pending_data._send.append(command_line); 
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
         }
     }
