@@ -16,7 +16,6 @@ irc::Server::Server( const char * port_number, const char * input_pass )
         _time_before_timeout.tv_usec = 0;
         FD_ZERO(&_client_sockets);
         memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
-        memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
         time(&_raw_start_time);
         _log_file.open (".log");
         LOG_IRC_START(_raw_start_time);  
@@ -75,17 +74,19 @@ irc::Server::Server( const char * port_number, const char * input_pass )
                 }
                 else
                 {
-                    LOG_BINDSUCCESS(_raw_start_time, _listening_socket); 
-                    memset(_ip_buffer, 0, INET6_ADDRSTRLEN);
-                    
-                    if (getnameinfo(address_iterator->ai_addr, address_iterator->ai_addrlen, _ip_buffer, sizeof(_ip_buffer), NULL, 0, 0) != 0)
+                    LOG_BINDSUCCESS(_raw_start_time, _listening_socket);
+                    if (address_iterator->ai_family == AF_INET)
                     {
-                        LOG_CANNOTTRANSLATE(_raw_start_time);
+                        struct sockaddr_in *ipv4 = reinterpret_cast<struct sockaddr_in *>(address_iterator->ai_addr);
+                        _hostname = std::string(inet_ntoa(ipv4->sin_addr));
+                        LOG_SHOWIP(_raw_start_time, _hostname);
                     }
                     else
                     {
-                        LOG_SHOWIP(_raw_start_time, _ip_buffer);
+                        LOG_CANNOTTRANSLATE(_raw_start_time);
+                        _hostname = std::string("localhost_ipv6");
                     }
+                    std::cout << _hostname << "\n";
                 }
 
                 LOG_TRYLISTENING(_raw_start_time, _listening_socket);

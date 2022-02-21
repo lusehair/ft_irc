@@ -897,7 +897,7 @@ std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::str
     
     std::string sender = input_user->_nickname; 
     std::string reciever = command_line.substr(start, end - start);
-    std::string ret = head(input_user) + command_line + "\r\n"; 
+    std::string ret = head(input_user) + command_line; 
     
     if(command_line.find("#") != std::string::npos)
     {
@@ -945,7 +945,7 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     {
         if(members_it->first != input_user || command_line.find(KICK) != std::string::npos)
         {
-            members_it->first->_pending_data._send.append(command_line); 
+            members_it->first->_pending_data._send.append(command_line + "\r\n"); 
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
         }
     }
