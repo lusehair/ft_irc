@@ -2,10 +2,6 @@
 #include "log.hpp"
 #include "Channel.hpp"
 
-//Used for the fopen and close the MOTD file (fopen & fcloses)
-#include <cstdio>
-
-
 void
 irc::Server::init_commands_map( void )
 {
@@ -18,13 +14,10 @@ irc::Server::init_commands_map( void )
     (irc::Server::_commands).insert(std::make_pair(KILL, &irc::Server::cmd_kill));
     (irc::Server::_commands).insert(std::make_pair(OPER, &irc::Server::cmd_oper));
     (irc::Server::_commands).insert(std::make_pair(PART, &irc::Server::cmd_part));
-    (irc::Server::_commands).insert(std::make_pair(MODE, &irc::Server::cmd_mode));
-    (irc::Server::_commands).insert(std::make_pair(WHO, &irc::Server::cmd_who));
     (irc::Server::_commands).insert(std::make_pair(QUIT, &irc::Server::cmd_quit));
     (irc::Server::_commands).insert(std::make_pair(LIST, &irc::Server::cmd_list));
     (irc::Server::_commands).insert(std::make_pair(NOTICE, &irc::Server::cmd_notice));
     (irc::Server::_commands).insert(std::make_pair(KICK, &irc::Server::cmd_kick));
-
 }
 
 /**
@@ -168,7 +161,6 @@ int *    irc::Server::pass_hash(std::string input_pass)
  */
 std::string * irc::Server::cmd_pass(const int input_socket, const std::string command_line, User * input_user)
 {
-    // loop in all users to see if the socket is already registered
     if(input_user != NULL)
     {
         LOG_PASSTWICE(_raw_start_time, input_socket);
@@ -176,12 +168,6 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
-
-    // if(input_user->_already_dead)
-    // {
-    //     return &input_user->_pending_data._recv;
-    // }
-
 
     unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
     _opened_sockets.insert(input_socket);
@@ -243,17 +229,16 @@ irc::Server::user_create(unnamed_users_iterator_t valid_unnamed_user)
     _connected_users.insert(std::make_pair(new_user->_nickname, new_user));
     _unnamed_users.erase(valid_unnamed_user->first);
 
-
-    // std::string nick_confirm = ": NICK : | " + (_connected_users.find(new_user->_nickname))->first + " | " + username + " |\r\n";
     new_user->_pending_data._send.append(": NICK :" + new_user->_nickname + "\r\n");
     new_user->_pending_data._send.append(reply(new_user, "001", "Hello from irc server\r\n"));
 
     if (_pending_sends.insert(std::make_pair(new_user->_own_socket, &(new_user->_pending_data._send))).second != true) 
     {
+        std::cout << "Pending send replace in user creation\n";
         _pending_sends.find(new_user->_own_socket)->second = &(valid_unnamed_user->second._pending_data._send);
     }
 
-    LOG_USERCONNECTED(_raw_start_time, valid_unnamed_user->second.nickname);
+    LOG_USERCONNECTED(_raw_start_time, new_user->_nickname);
     return &new_user->_pending_data._recv;
 }
 
@@ -283,7 +268,6 @@ std::string * irc::Server::cmd_nick(const int input_socket, const std::string co
             input_user->_pending_data._send.append(ERR_NICKNAMEINUSE(input_user, input_user->_nickname, nick));
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         }
-        
         else
         {
             input_user->_pending_data._send.append(head(input_user) + "NICK :" + nick + "\r\n");
@@ -300,7 +284,6 @@ std::string * irc::Server::cmd_nick(const int input_socket, const std::string co
        
        return &input_user->_pending_data._recv;
     }
-    
     else
     {
         unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
@@ -356,15 +339,9 @@ std::string * irc::Server::cmd_user(const int input_socket, const std::string co
         return &input_user->_pending_data._recv;
     }
 
-    // if(input_user->_already_dead)
-    // {
-    //     return &input_user->_pending_data._recv;
-    // }
-
-
     std::map<int, pending_socket>::iterator current_unnamed_user = _unnamed_users.find(input_socket);
 
-    if (current_unnamed_user->second.pass_check != true) 
+    if (current_unnamed_user->second.pass_check != true)
     {
         _unnamed_users.erase(current_unnamed_user);
         _opened_sockets.erase(current_unnamed_user->first);
@@ -506,7 +483,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
 
     if(input_user->_already_dead)
     {
-             return &input_user->_pending_data._recv;
+        return &input_user->_pending_data._recv;
     }
 
     if(!input_user->_isOperator)
@@ -562,12 +539,10 @@ irc::Server::cmd_quit(const int input_socket, const std::string command_line, Us
         FD_CLR(current_unnamed_user->first, &_client_sockets);
         close(current_unnamed_user->first);
     }
-    
     else if(input_user->_already_dead)
     {
         return &input_user->_pending_data._recv;
     }
-
     else
     {
         size_t reason_begin = command_line.find(':');
@@ -609,7 +584,7 @@ std::string *irc::Server::cmd_notice(const int input_socket, const std::string c
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
-    if(input_user->_already_dead)
+    else if(input_user->_already_dead)
     {
        return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
@@ -640,12 +615,10 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
-
-    if(input_user->_already_dead)
+    else if(input_user->_already_dead)
     {
         return &input_user->_pending_data._recv;
     }
-
 
     std::string ret_list; 
     running_channels_iterator_t running_channel_iterator; 
@@ -716,18 +689,17 @@ void irc::Server::send_names(User * input_user, Channel * channel_target)
 }
 
 
-std::string   *irc::Server::cmd_kick(const int input_socket, const std::string command_line, User * input_user)
+std::string *
+irc::Server::cmd_kick(const int input_socket, const std::string command_line, User * input_user)
 {
     if(input_user == NULL)
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
-
-    if(input_user->_already_dead)
+    else if(input_user->_already_dead)
     {
         return &input_user->_pending_data._recv;
-    }
-
+    } 
     
     size_t start = command_line.find("#") + 1; 
     size_t end = command_line.find(" ", start); 
@@ -749,29 +721,25 @@ std::string   *irc::Server::cmd_kick(const int input_socket, const std::string c
     }
 
     std::string ret; 
-    std::string user; 
-    // case if just one user to kick 
+    std::string user;
 
-       start = end + 1; 
-       end = command_line.find(" ", start);
-       user = command_line.substr(start, end - start); 
-       connected_users_iterator_t user_target = _connected_users.find(user);
-       std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
-       if (user_iterator == running_channel_iterator->second->_members.end())
-       {
-        puts("not here");
+    start = end + 1; 
+    end = command_line.find(" ", start);
+    user = command_line.substr(start, end - start); 
+    connected_users_iterator_t user_target = _connected_users.find(user);
+    std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
+    if (user_iterator == running_channel_iterator->second->_members.end())
+    {
         input_user->_pending_data._send.append(ERR_USERNOTINCHANNEL(input_user->_nickname, user, channel)); 
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send))); 
         return &input_user->_pending_data._recv;
-       }
-       else
-       {
-               puts("just here");
-
-           privmsg_hashtag_case(head(input_user)+command_line, input_user); 
-           running_channel_iterator->second->kick_user(user_iterator->first);
-           return &input_user->_pending_data._recv;
-       }
+    }
+    else
+    {
+        privmsg_hashtag_case(head(input_user)+command_line, input_user); 
+        running_channel_iterator->second->kick_user(user_iterator->first);
+        return &input_user->_pending_data._recv;
+    }
 }
 
 /**
@@ -786,15 +754,12 @@ std::string *    irc::Server::cmd_join(const int input_socket, const std::string
 {
     if(input_user == NULL)
     {
-        // LOG_KILLNOREGISTER(_raw_start_time, input_socket); NOT REGISTERED
         return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
-
-    if(input_user->_already_dead)
+    else if(input_user->_already_dead)
     {
         return &input_user->_pending_data._recv;
     }
-
 
     size_t next_comma, next_space, next_hashtag = 0;
     std::string channel_name;
@@ -870,12 +835,10 @@ std::string *    irc::Server::cmd_part(const int input_socket, const std::string
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
     }
-
-    if(input_user->_already_dead)
+    else if(input_user->_already_dead)
     {
         return &input_user->_pending_data._recv;
     }
-
 
     size_t next_comma = 0;
     size_t reason_begin = command_line.find(':');
@@ -916,12 +879,10 @@ std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::str
     {
         return &_unnamed_users.find(input_socket)->second._pending_data._recv;
     }
-
-    if(input_user->_already_dead)
+    else if(input_user->_already_dead)
     {
         return &input_user->_pending_data._recv;
     }
-
 
     size_t start = command_line.find(" ") + 1;
     size_t end = command_line.find(":") - 1;
@@ -965,7 +926,6 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
         return ; 
     }
 
-
     if(!input_user->if_is_on_chan(running_channels_iterator->second) && command_line.find(KICK) == std::string::npos)
     {
          puts("_______cant send message");
@@ -984,65 +944,4 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     }
     LOG_SENDMSGTOCHAN(_raw_start_time, input_user->_nickname, chan, command_line); 
     return ; 
-}
-
-
-// Dirty work, need to check exception and the all cases of WHO cmd 
-std::string *irc::Server::cmd_who(const int input_socket, const std::string command_line, User * input_user)
-{
-    if(input_user == NULL)
-    {
-        return &input_user->_pending_data._recv;;
-    }
-
-    if(input_user->_already_dead)
-    {
-        return &input_user->_pending_data._recv;
-    }
-
-
-    size_t start = command_line.find("#"); 
-    if(start == std::string::npos) 
-    {
-        return &input_user->_pending_data._recv;;
-    }
-    puts("Hello"); 
-    std::string ret = head(input_user) + "315 " + input_user->_nickname + " " + input_user->_username + " :End of /WHO list\r\n";
-    input_user->_pending_data._send.append(ret);
-    
-    _pending_sends.insert(std::make_pair(input_socket, &input_user->_pending_data._send));
-    return &input_user->_pending_data._recv;
-
-}
-
-std::string   * irc::Server::cmd_mode(const int input_socket, const std::string command_line, User * input_user)
-{
-    if(input_user == NULL)
-    {
-        return &input_user->_pending_data._recv;;
-    }
-    size_t start = command_line.find("#"); 
-    
-    // case if the mode request is on the connection 
-    // if(start == std::string::npos)
-    // {
-    //     start = strlen(MODE) + 2;
-    //     size_t end = command_line.find(" ", pos);  
-    //     std::string nickname = command_line.substr()
-    //     return &input_user->_pending_data._recv; 
-    // }
-    start++;
-    size_t end = command_line.find(" ", start);
-    std::string channel = command_line.substr(start, end - start);
-    running_channels_iterator_t running_channels_iterator =  _running_channels.find(channel);
-
-    if(running_channels_iterator == _running_channels.end())
-    {
-        ERR_NOSUCHCHANNEL(input_user, channel);
-    }
-
-    std::string ret = head(input_user) + "324 " + input_user->_nickname + " #" + channel + " +n \r\n";
-    input_user->_pending_data._send.append(ret);
-    _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
-    return &input_user->_pending_data._recv;
 }

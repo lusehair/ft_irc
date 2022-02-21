@@ -15,7 +15,6 @@
 # include <unistd.h>
 # include <fstream>
 
-
 // INET6_ADDRSTRLEN
 # include <netinet/in.h>
 
@@ -42,10 +41,6 @@
 
 // for_each, min
 # include <algorithm>
-
-
-# include <fstream>
-
 
 // Size of the receiving buffer being 512 as the max size of a packet defined in rfc 2812
 # define MAX_REQUEST_LEN 512
@@ -80,7 +75,7 @@
 # define RPL_ENDOFNAMES(USERC, NICK, CHAN) head(USERC) + "366 " + NICK + " #" + CHAN + " :End of /NAMES list\r\n"
 # define ERR_PASSWDMISMATCH(USERC) head(USERC) + "464 :Password incorrect\r\n"
 #define RPL_LIST(USERC, NICK, CHANNEL) head(input_user) + "322" + " " + NICK + " #" + CHANNEL 
-# define RPL_LISTSTART "321"
+// # define RPL_LISTSTART "321"
 # define RPL_YOUREOPER(USERC) head(USERC) + "381 " + USERC->_nickname + " :You are now an IRC operator\r\n"
 #define RPL_LISTEND(USERC, NICK) head(USERC) + "323 " + NICK + " :End of /LIST\r\n"
 # define ERR_USERNOTINCHANNEL(NICK, USERTARGET, CHAN) head(input_user) + "441" + " " + NICK + " " + USERTARGET + " #" + CHAN + " :They aren't on that channel\r\n"

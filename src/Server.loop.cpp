@@ -116,7 +116,6 @@ irc::Server::loop( void )
                         if (byte_count > 0)
                         {
                             std::cout << pending_socket_iterator->first << " Server <------| " <<  pending_socket_iterator->second._pending_data._recv;
-                            //std::cout << "Total pending packet:\n" << pending_socket_iterator->second._pending_data._recv;
                         }
 
                         tmp_pending_socket_iterator = pending_socket_iterator;
@@ -170,7 +169,6 @@ irc::Server::loop( void )
                         if (byte_count > 0)
                         {
                             std::cout << connected_user_iterator->second->_own_socket << " ----> Server |" <<  connected_user_iterator->second->_pending_data._recv;
-                            //std::cout << "Total pending packet:\n" << connected_user_iterator->second->_pending_data._recv;
                         }
 
                         tmp_connected_user_iterator = connected_user_iterator;
