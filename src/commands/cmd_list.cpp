@@ -4,10 +4,20 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
 {
     if(input_user == NULL)
     {
-        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
+        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.find(input_socket);
+        current_unnamed_user->second._pending_data._send.append(ERR_NOTREGISTERED);
+        _pending_sends.insert(std::make_pair(input_socket, &current_unnamed_user->second._pending_data._recv));
+        return &current_unnamed_user->second._pending_data._recv;
     }
     else if(input_user->_already_dead)
     {
+        return &input_user->_pending_data._recv;
+    }
+
+    if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
+    {
+        input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, LIST)); 
+        _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
 
@@ -20,7 +30,6 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
         {
             ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + " " + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
         }
-       
     }
     else
     {

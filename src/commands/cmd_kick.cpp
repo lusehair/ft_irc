@@ -21,7 +21,7 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
-    
+
     size_t start = command_line.find("#") + 1; 
     size_t end = command_line.find(" ", start); 
     std::string channel = command_line.substr(start, end - start); 

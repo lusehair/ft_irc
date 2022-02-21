@@ -12,11 +12,7 @@ irc::Server::cmd_quit(const int input_socket, const std::string command_line, Us
         FD_CLR(current_unnamed_user->first, &_client_sockets);
         close(current_unnamed_user->first);
     }
-    else if(input_user->_already_dead)
-    {
-        return &input_user->_pending_data._recv;
-    }
-    else
+    else if (!input_user->_already_dead)
     {
         size_t reason_begin = command_line.find(':');
         std::string reason;

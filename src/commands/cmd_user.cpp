@@ -36,7 +36,8 @@ std::string * irc::Server::cmd_user(const int input_socket, const std::string co
     std::size_t nb_of_space = std::count(command_line.begin(), command_line.end(), ' ');
     if((nb_of_space < 4 || command_line.find(':') == std::string::npos))
     {
-        LOG_NOPARAM(_raw_start_time, input_socket, command_line);
+        current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, LIST)); 
+        _pending_sends.insert(std::make_pair(input_socket, &(current_unnamed_user->second._pending_data._send)));
         return &current_unnamed_user->second._pending_data._recv;
     }
 

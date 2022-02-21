@@ -16,7 +16,6 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
     while ((endl_pos = received_data->find("\r\n", last_endl_pos)) != received_data->npos)
     {
         std::string command_line = received_data->substr(last_endl_pos, endl_pos - last_endl_pos);
-        std::cout << "|" << command_line << "|\n";
         size_t command_name_end = command_line.find(" ");
         
         if (command_name_end == command_line.npos || (command_name_end != command_line.npos && !(command_name_end < endl_pos)))

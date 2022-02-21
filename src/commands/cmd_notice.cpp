@@ -2,18 +2,23 @@
 
 std::string *irc::Server::cmd_notice(const int input_socket, const std::string command_line, User *input_user)
 {
-    if(input_user == NULL) 
+    if(input_user == NULL)
     {
-        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
+        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.find(input_socket);
+        return &current_unnamed_user->second._pending_data._recv;
     }
-    else if(input_user->_already_dead)
+
+    size_t end;
+    if (input_user->_already_dead
+        || std::count(command_line.begin(), command_line.end(), ' ') < 2
+        || (end = command_line.find(':')) == command_line.npos)
     {
-       return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
+        return &input_user->_pending_data._recv;
     }
 
     size_t start = command_line.find(" ") + 1;
-    size_t end = command_line.find(":") - 1;
-    
+    --end;
+
     std::string sender = input_user->_nickname; 
     std::string reciever = command_line.substr(start, end - start);
     std::string ret = head(input_user) + command_line + "\r\n"; 
