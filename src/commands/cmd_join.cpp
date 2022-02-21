@@ -12,10 +12,20 @@ std::string *    irc::Server::cmd_join(const int input_socket, const std::string
 {
     if(input_user == NULL)
     {
-        return &_unnamed_users.find(input_socket)->second._pending_data._recv; 
+        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.find(input_socket);
+        current_unnamed_user->second._pending_data._send.append(ERR_NOTREGISTERED);
+        _pending_sends.insert(std::make_pair(input_socket, &current_unnamed_user->second._pending_data._recv));
+        return &current_unnamed_user->second._pending_data._recv;
     }
     else if(input_user->_already_dead)
     {
+        return &input_user->_pending_data._recv;
+    }
+
+    if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
+    {
+        input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, JOIN));
+        _pending_sends.insert(std::make_pair(input_socket, &input_user->_pending_data._recv));
         return &input_user->_pending_data._recv;
     }
 

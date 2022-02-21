@@ -3,7 +3,7 @@
 void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_user)
 {
     size_t start = command_line.find("#") + 1;
-    size_t end = command_line.find(" ", start); 
+    size_t end = command_line.find(" ", start);
     std::string chan = command_line.substr(start, end - start); 
 
     running_channels_iterator_t running_channels_iterator =  _running_channels.find(chan);  
@@ -13,7 +13,6 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     }
     if(running_channels_iterator == _running_channels.end())
     {
-        
         input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(chan));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return ; 
@@ -23,7 +22,7 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     {
         if(members_it->first != input_user || command_line.find(KICK) != std::string::npos)
         {
-            members_it->first->_pending_data._send.append(command_line + "\r\n"); 
+            members_it->first->_pending_data._send.append(command_line); 
             _pending_sends.insert(std::make_pair(members_it->first->_own_socket, &(members_it->first->_pending_data._send)));
         }
     }

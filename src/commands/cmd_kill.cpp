@@ -13,8 +13,10 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
 {
     if(input_user == NULL)
     {
-        LOG_KILLNOREGISTER(_raw_start_time, input_socket);
-        return &_unnamed_users.find(input_socket)->second._pending_data._recv;
+        unnamed_users_iterator_t current_unnamed_user = _unnamed_users.find(input_socket);
+        current_unnamed_user->second._pending_data._send.append(ERR_NOTREGISTERED);
+        _pending_sends.insert(std::make_pair(input_socket, &current_unnamed_user->second._pending_data._recv));
+        return &current_unnamed_user->second._pending_data._recv;
     }
 
     if(input_user->_already_dead)
@@ -33,7 +35,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
     size_t space_pos = command_line.find(" ");
     size_t second_space_pos = command_line.find(" ", space_pos + 1);
 
-    if(std::count(command_line.begin(), command_line.end(), ' ') < 2 || command_line.find(":") == command_line.length() - 1)
+    if(std::count(command_line.begin(), command_line.end(), ' ') < 2 || command_line.find(":") == command_line.npos)
     {
         LOG_NOPARAM(_raw_start_time, input_socket, command_line);
         input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, "KILL"));
@@ -41,7 +43,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
         return &input_user->_pending_data._recv;
     }
 
-    std::string target = command_line.substr(space_pos + 1, second_space_pos - (strlen(KILL) + 1));
+    std::string target = command_line.substr(space_pos + 1, second_space_pos - (space_pos + 1));
     std::string reason = command_line.substr(second_space_pos);     
 
     connected_users_iterator_t connected_user_iterator = _connected_users.find(target);
