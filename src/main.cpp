@@ -29,6 +29,7 @@ int main(int ac, char **av)
     }
 
     signal(SIGINT, sig_handle);
+    signal(SIGQUIT, sig_handle);
 
     main_server->loop();
 
