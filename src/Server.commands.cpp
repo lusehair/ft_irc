@@ -705,7 +705,6 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
     size_t end = command_line.find(" ", start); 
     std::string channel = command_line.substr(start, end - start); 
     running_channels_iterator_t running_channel_iterator = _running_channels.find(channel); 
-    
     if(running_channel_iterator == _running_channels.end())
     {
         input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, channel)); 
@@ -713,7 +712,8 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
         return &input_user->_pending_data._recv;
     }
 
-    if(!input_user->_isOperator)
+    std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(input_user); 
+    if(user_iterator->second != true)
     {
         input_user->_pending_data._send.append(ERR_NOPRIVILEGES(input_user, channel)); 
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
@@ -727,7 +727,7 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
     end = command_line.find(" ", start);
     user = command_line.substr(start, end - start); 
     connected_users_iterator_t user_target = _connected_users.find(user);
-    std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
+    user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
     if (user_iterator == running_channel_iterator->second->_members.end())
     {
         input_user->_pending_data._send.append(ERR_USERNOTINCHANNEL(input_user->_nickname, user, channel)); 

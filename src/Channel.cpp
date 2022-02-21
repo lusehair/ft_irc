@@ -8,7 +8,6 @@ irc::Channel::Channel( irc::Server & server, User * channel_operator, const std:
     _members.insert(std::make_pair(channel_operator, true));
     ++_members_count;
     LOG_CHANCONSTRUCT( _name);
-    channel_operator->_isOperator = true; 
 }
 
 irc::Channel::~Channel()
