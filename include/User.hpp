@@ -22,13 +22,13 @@ namespace irc
             };
 
         public:
-            int                 _own_socket;
-            std::string         _nickname;
-            std::string         _username;
-            bool                _isOperator;
-            partial_packet      _pending_data;
-            std::list<Channel *>   _joined_channels;
-            bool                   _already_dead; 
+            int                     _own_socket;
+            std::string             _nickname;
+            std::string             _username;
+            bool                    _isOperator;
+            partial_packet          _pending_data;
+            std::list<Channel *>    _joined_channels;
+            bool                    _already_dead; 
 
         private:
             User();

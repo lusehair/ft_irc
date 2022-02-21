@@ -23,14 +23,13 @@ namespace irc
         private:
             Server &                            _server_master;
             const std::string                   _name;
-            // std::string                         _topic;
             
             Channel();
             Channel(const Channel & other);
             Channel & operator = (const Channel & other);
 
         public:
-            std::map< User *, const bool>  _members;
+            std::map<User *, const bool>  _members;
 
             Channel(irc::Server & server, irc::User * channel_operator, const std::string channel_name);
 
