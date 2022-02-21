@@ -2,7 +2,7 @@
 # define SERVER_HPP
 
 // memset, strerro << "\n"r
-#include <cstring>
+# include <cstring>
 
 // data storage
 # include <string>
@@ -61,7 +61,7 @@
 # define PART "PART"
 # define MODE "MODE"
 # define WHO "WHO"
-#define NOTICE "NOTICE"
+# define NOTICE "NOTICE"
 
 # define ERR_NEEDMOREPARAMS(USERC, NICK, CMD) head(USERC) + "461 " + NICK + " " + CMD + " :Not enough parameters\r\n"
 # define ERR_ALREADYREGISTRED(USERC, NICK) head(USERC) + "462 " + NICK + " :You may not reregister\r\n"     
@@ -74,10 +74,9 @@
 # define ERR_NICKNAMEINUSE(USERC, NICK, NEWNICK) head(USERC) + "433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
 # define RPL_ENDOFNAMES(USERC, NICK, CHAN) head(USERC) + "366 " + NICK + " #" + CHAN + " :End of /NAMES list\r\n"
 # define ERR_PASSWDMISMATCH(USERC) head(USERC) + "464 :Password incorrect\r\n"
-#define RPL_LIST(USERC, NICK, CHANNEL) head(input_user) + "322" + " " + NICK + " #" + CHANNEL 
-// # define RPL_LISTSTART "321"
+# define RPL_LIST(USERC, NICK, CHANNEL) head(input_user) + "322" + " " + NICK + " #" + CHANNEL
 # define RPL_YOUREOPER(USERC) head(USERC) + "381 " + USERC->_nickname + " :You are now an IRC operator\r\n"
-#define RPL_LISTEND(USERC, NICK) head(USERC) + "323 " + NICK + " :End of /LIST\r\n"
+# define RPL_LISTEND(USERC, NICK) head(USERC) + "323 " + NICK + " :End of /LIST\r\n"
 # define ERR_USERNOTINCHANNEL(NICK, USERTARGET, CHAN) head(input_user) + "441" + " " + NICK + " " + USERTARGET + " #" + CHAN + " :They aren't on that channel\r\n"
 # define MSG_KILL(USERC, REASON) head(USERC) + "KILL" + REASON + "\r\n"
 # define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT" + REASON + "\r\n"
@@ -94,9 +93,9 @@
 #  define OS_SENDOPT MSG_NOSIGNAL
 # endif
 
-#include "User.hpp"
-#include "log.hpp"
-#include "Channel.hpp"
+# include "User.hpp"
+# include "log.hpp"
+# include "Channel.hpp"
 
 namespace irc
 {
