@@ -66,15 +66,13 @@
 #define LOG_JOINCHAN(TIME, USER, CHAN) _log_file << log_time(TIME) << "s User: " << USER << " Join channel: " << CHAN << '\n' 
 #define LOG_LEFTCHAN(TIME, USER, CHAN) _log_file << log_time(TIME) << "s User: " << USER << " left: " << CHAN << '\n' 
 #define LOG_SENDMSGTOCHAN(TIME, USER, CHAN, MSG) _log_file << log_time(TIME) << "s User: " << USER << " send: " << CHAN << " to the channel: " << MSG << '\n'; 
-#define LOG_CHANCONSTRUCT(CHAN) std::cout << " the channel constructor was called for chan: " << CHAN << '\n'; 
-#define LOG_CHANDESTRUCT(CHAN) std::cout  << " the channel destructor of " << CHAN << " was called\n"; 
+#define LOG_CHANCONSTRUCT(CHAN) std::cout << "Channel constructor was called for chan: " << CHAN << '\n'; 
+#define LOG_CHANDESTRUCT(CHAN) std::cout  << "Channel destructor of " << CHAN << " was called\n"; 
 
 // COUT SENT / RECIEVE 
 
 #define LOG_
 
-
 long    log_time(time_t input_time);  
-
 
 # endif 

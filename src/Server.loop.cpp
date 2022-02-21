@@ -75,110 +75,92 @@ irc::Server::loop( void )
                     std::cerr << "Accept fail: " << strerror(errno) << "\n";
                 }
             }
+
             pending_socket_iterator = _unnamed_users.begin();
             while (number_of_ready_sockets > 0 && pending_socket_iterator != _unnamed_users.end())
             {
-                if (FD_ISSET(pending_socket_iterator->first, &_ready_sockets))
+                tmp_pending_socket_iterator = pending_socket_iterator;
+                ++pending_socket_iterator;
+
+                if (FD_ISSET(tmp_pending_socket_iterator->first, &_ready_sockets))
                 {
-                    FD_CLR(pending_socket_iterator->first, &_ready_sockets);
+                    FD_CLR(tmp_pending_socket_iterator->first, &_ready_sockets);
                     --number_of_ready_sockets;
 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
-                    byte_count = recv(pending_socket_iterator->first, _main_buffer, MAX_REQUEST_LEN, 0);
-                    std::cout << "socket n'" << pending_socket_iterator->first << ". bytes received: " << byte_count << "\n";
+                    byte_count = recv(tmp_pending_socket_iterator->first, _main_buffer, MAX_REQUEST_LEN, 0);
+                    std::cout << "socket n'" << tmp_pending_socket_iterator->first << ". bytes received: " << byte_count << "\n";
                     if (byte_count == -1)
                     {
                         if (errno == EAGAIN)
                         {
                             continue ;
                         }
-                        std::cout << "\nsocket n'" << pending_socket_iterator->first << " recv error: " << strerror(errno) << "\n";
-                        close(pending_socket_iterator->first);
-                        _opened_sockets.erase(pending_socket_iterator->first);
-                        FD_CLR(pending_socket_iterator->first, &_client_sockets);
-                        tmp_pending_socket_iterator = pending_socket_iterator;
-                        ++pending_socket_iterator;
-                        _unnamed_users.erase(tmp_pending_socket_iterator);
+                        std::cout << "\nsocket n'" << tmp_pending_socket_iterator->first << " recv error: " << strerror(errno) << "\n";
                     }
                     else if (byte_count == 0)
                     {
-                        std::cout << "\nsocket n'" << pending_socket_iterator->first << " is closed on client side.\n";
-                        close(pending_socket_iterator->first);
-                        _opened_sockets.erase(pending_socket_iterator->first);
-                        FD_CLR(pending_socket_iterator->first, &_client_sockets);
-                        tmp_pending_socket_iterator = pending_socket_iterator;
-                        ++pending_socket_iterator;
-                        _unnamed_users.erase(tmp_pending_socket_iterator);
+                        std::cout << "\nsocket n'" << tmp_pending_socket_iterator->first << " is closed on client side.\n";
                     }
                     else
                     {
-                        pending_socket_iterator->second._pending_data._recv.append(_main_buffer);
+                        tmp_pending_socket_iterator->second._pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
                         {
-                            std::cout << pending_socket_iterator->first << " Server <------| " <<  pending_socket_iterator->second._pending_data._recv;
+                            std::cout << tmp_pending_socket_iterator->first << " Server <------| " <<  tmp_pending_socket_iterator->second._pending_data._recv;
                         }
-
-                        tmp_pending_socket_iterator = pending_socket_iterator;
-                        ++pending_socket_iterator;
                         cmd_caller(tmp_pending_socket_iterator);
+                        continue ;
                     }
-                }
-                else
-                {
-                    ++pending_socket_iterator;
+                    close(tmp_pending_socket_iterator->first);
+                    _opened_sockets.erase(tmp_pending_socket_iterator->first);
+                    FD_CLR(tmp_pending_socket_iterator->first, &_client_sockets);
+                    _unnamed_users.erase(tmp_pending_socket_iterator);
                 }
             }
 
             connected_user_iterator = _connected_users.begin();
             while (number_of_ready_sockets > 0 && connected_user_iterator != _connected_users.end())
             {
-                if (FD_ISSET(connected_user_iterator->second->_own_socket, &_ready_sockets))
+                tmp_connected_user_iterator = connected_user_iterator;
+                ++connected_user_iterator;
+
+                if (FD_ISSET(tmp_connected_user_iterator->second->_own_socket, &_ready_sockets))
                 {
                     --number_of_ready_sockets;
 
                     memset(_main_buffer, 0, MAX_REQUEST_LEN + 1);
-                    byte_count = recv(connected_user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
-                    std::cout << "socket n'" << connected_user_iterator->second->_own_socket << ". bytes received: " << byte_count << "\n";
+                    byte_count = recv(tmp_connected_user_iterator->second->_own_socket, _main_buffer, MAX_REQUEST_LEN, 0);
+                    std::cout << "socket n'" << tmp_connected_user_iterator->second->_own_socket << ". bytes received: " << byte_count << "\n";
                     if (byte_count == -1)
                     {
                         if (errno == EAGAIN)
                         {
                             continue ;
                         }
-                        std::cout << "\nsocket n'" << connected_user_iterator->second->_own_socket << " recv error: " << strerror(errno) << "\n";
-                        close(connected_user_iterator->second->_own_socket);
-                        _opened_sockets.erase(connected_user_iterator->second->_own_socket);
-                        FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);
-                        tmp_connected_user_iterator = connected_user_iterator;
-                        ++connected_user_iterator;
-                        _connected_users.erase(tmp_connected_user_iterator);
+                        std::cout << "\nsocket n'" << tmp_connected_user_iterator->second->_own_socket << " recv error: " << strerror(errno) << "\n";
                     }
                     else if (byte_count == 0)
                     {
-                        std::cout << "\nsocket n'" << connected_user_iterator->second->_own_socket << " is closed on client side.\n";
-                        close(connected_user_iterator->second->_own_socket);
-                        _opened_sockets.erase(connected_user_iterator->second->_own_socket);
-                        FD_CLR(connected_user_iterator->second->_own_socket, &_client_sockets);
-                        tmp_connected_user_iterator = connected_user_iterator;
-                        ++connected_user_iterator;
-                        _connected_users.erase(tmp_connected_user_iterator);
+                        std::cout << "\nsocket n'" << tmp_connected_user_iterator->second->_own_socket << " is closed on client side.\n";
                     }
                     else
                     {
-                        connected_user_iterator->second->_pending_data._recv.append(_main_buffer);
+                        tmp_connected_user_iterator->second->_pending_data._recv.append(_main_buffer);
                         if (byte_count > 0)
                         {
-                            std::cout << connected_user_iterator->second->_own_socket << " ----> Server |" <<  connected_user_iterator->second->_pending_data._recv;
+                            std::cout << tmp_connected_user_iterator->second->_own_socket << " ----> Server |" <<  tmp_connected_user_iterator->second->_pending_data._recv;
                         }
 
-                        tmp_connected_user_iterator = connected_user_iterator;
-                        ++connected_user_iterator;
                         cmd_caller(tmp_connected_user_iterator->second);
+                        continue ;
                     }
-                }
-                else
-                {
-                    ++connected_user_iterator;
+                    std::string reason = " :" + tmp_connected_user_iterator->second->_nickname + "\r\n";
+                    quit_all_chan(tmp_connected_user_iterator->second, reason);
+                    close(tmp_connected_user_iterator->second->_own_socket);
+                    _opened_sockets.erase(tmp_connected_user_iterator->second->_own_socket);
+                    FD_CLR(tmp_connected_user_iterator->second->_own_socket, &_client_sockets);
+                    _connected_users.erase(tmp_connected_user_iterator);
                 }
             }
 
