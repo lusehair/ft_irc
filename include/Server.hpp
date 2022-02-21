@@ -66,21 +66,21 @@
 # define WHO "WHO"
 # define NOTICE "NOTICE"
 
-# define ERR_NEEDMOREPARAMS(USERC, NICK, CMD) head(USERC) + "461 " + NICK + " " + CMD + " :Not enough parameters\r\n"
-# define ERR_ALREADYREGISTRED(USERC, NICK) head(USERC) + "462 " + NICK + " :You may not reregister\r\n"     
-# define ERR_NOTREGISTERED ": 451 :You have not registered\r\n"
-# define ERR_NOPRIVILEGES(USERC, NICK) head(USERC) + "481 " + NICK + " :Permission Denied- You're not an IRC operator\r\n"
-# define ERR_NOSUCHNICK(USERC, REQUSER) head(USERC) + "401 " + REQUSER + " :No such nick/channel\r\n"
-# define ERR_CHANOPRIVSNEEDED(USERC, NICK, CHAN) head(USERC) + "482 #" + CHAN + " :You're not channel operator\r\n"
-# define ERR_NOSUCHCHANNEL(USERC, REQCHAN) head(USERC) + "403 " + REQCHAN + " :No such channel\r\n"
-# define ERR_NOTONCHANNEL(USERC, CHAN) head(USERC) +  "442 #" + CHAN + " :You're not on that channel\r\n" 
-# define ERR_NICKNAMEINUSE(USERC, NICK, NEWNICK) head(USERC) + "433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
+# define ERR_NEEDMOREPARAMS(NICK, CMD) ':' _hostname + " 461 " + NICK + " " + CMD + " :Not enough parameters\r\n"
+# define ERR_ALREADYREGISTRED(NICK) ':' _hostname + " 462 " + NICK + " :You may not reregister\r\n"     
+# define ERR_NOTREGISTERED ':' _hostname + " : 451 :You have not registered\r\n"
+# define ERR_NOPRIVILEGES(NICK) ':' _hostname + " 481 " + NICK + " :Permission Denied- You're not an IRC operator\r\n"
+# define ERR_NOSUCHNICK(REQUSER) ':' _hostname + " 401 " + REQUSER + " :No such nick/channel\r\n"
+# define ERR_CHANOPRIVSNEEDED(NICK, CHAN) ':' _hostname + " 482 #" + CHAN + " :You're not channel operator\r\n"
+# define ERR_NOSUCHCHANNEL(REQCHAN) ':' _hostname + " 403 " + REQCHAN + " :No such channel\r\n"
+# define ERR_NOTONCHANNEL(CHAN) ':' _hostname +  " 442 #" + CHAN + " :You're not on that channel\r\n" 
+# define ERR_NICKNAMEINUSE(NICK, NEWNICK) ':' _hostname + " 433 " + NICK + " " + NEWNICK + " :Nickname is already in use\r\n"
 # define RPL_ENDOFNAMES(USERC, NICK, CHAN) head(USERC) + "366 " + NICK + " #" + CHAN + " :End of /NAMES list\r\n"
-# define ERR_PASSWDMISMATCH(USERC) head(USERC) + "464 :Password incorrect\r\n"
+# define ERR_PASSWDMISMATCH ':' _hostname + " 464 :Password incorrect\r\n"
 # define RPL_LIST(USERC, NICK, CHANNEL) head(input_user) + "322 " + NICK + " #" + CHANNEL
 # define RPL_YOUREOPER(USERC) head(USERC) + "381 " + USERC->_nickname + " :You are now an IRC operator\r\n"
 # define RPL_LISTEND(USERC, NICK) head(USERC) + "323 " + NICK + " :End of /LIST\r\n"
-# define ERR_USERNOTINCHANNEL(NICK, USERTARGET, CHAN) head(input_user) + "441 " + NICK + " " + USERTARGET + " #" + CHAN + " :They aren't on that channel\r\n"
+# define ERR_USERNOTINCHANNEL(NICK, USERTARGET, CHAN) ':' _hostname + " 441 " + NICK + " " + USERTARGET + " #" + CHAN + " :They aren't on that channel\r\n"
 # define MSG_KILL(USERC, REASON) head(USERC) + "KILL" + REASON + "\r\n"
 # define MSG_QUIT(USERC, REASON) head(USERC) + "QUIT" + REASON + "\r\n"
 
@@ -128,7 +128,7 @@ namespace irc
             struct timeval                      _time_before_timeout; 
             char                                _main_buffer[MAX_REQUEST_LEN + 1];
             std::ofstream                       _log_file;
-            std::string                         _hostname;
+            std::string                         ':' _hostname;
 
         public:
             typedef std::map<int, pending_socket>::iterator       unnamed_users_iterator_t;

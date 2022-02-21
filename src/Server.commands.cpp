@@ -164,7 +164,7 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
     if(input_user != NULL)
     {
         LOG_PASSTWICE(_raw_start_time, input_socket);
-        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED(input_user, input_user->_nickname));
+        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED(input_user->_nickname));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
@@ -265,7 +265,7 @@ std::string * irc::Server::cmd_nick(const int input_socket, const std::string co
         if(_connected_users.find(nick) != _connected_users.end())
         {
             LOG_NICKTAKEN(_raw_start_time,input_user->_nickname, nick);
-            input_user->_pending_data._send.append(ERR_NICKNAMEINUSE(input_user, input_user->_nickname, nick));
+            input_user->_pending_data._send.append(ERR_NICKNAMEINUSE(input_user->_nickname, nick));
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         }
         else
@@ -334,7 +334,7 @@ std::string * irc::Server::cmd_user(const int input_socket, const std::string co
     if(input_user != NULL)
     {
         LOG_USERTAKEN(_raw_start_time, input_user->_nickname, input_user->_username);
-        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED(input_user, input_user->_nickname));
+        input_user->_pending_data._send.append(ERR_ALREADYREGISTRED(input_user->_nickname));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
@@ -434,7 +434,7 @@ irc::Server::cmd_oper(const int input_socket, const std::string command_line, Us
     } 
     else
     {
-        input_user->_pending_data._send.append(ERR_PASSWDMISMATCH(input_user));
+        input_user->_pending_data._send.append(ERR_PASSWDMISMATCH);
     }
     
     _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
@@ -489,7 +489,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
     if(!input_user->_isOperator)
     {
         LOG_KILLWITHOUTPRIV(_raw_start_time, input_user->_nickname);
-        input_user->_pending_data._send.append(ERR_NOPRIVILEGES(input_user, input_user->_nickname));
+        input_user->_pending_data._send.append(ERR_NOPRIVILEGES(input_user->_nickname));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return &input_user->_pending_data._recv;
     }
@@ -500,7 +500,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
     if(std::count(command_line.begin(), command_line.end(), ' ') < 2 || command_line.find(":") == command_line.length() - 1)
     {
         LOG_NOPARAM(_raw_start_time, input_socket, command_line);
-        input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user, input_user->_nickname, "KILL"));
+        input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, "KILL"));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return &input_user->_pending_data._recv;
     }
@@ -512,7 +512,7 @@ irc::Server::cmd_kill(const int input_socket, const std::string command_line, Us
     if(connected_user_iterator == _connected_users.end())
     {
         LOG_KILLUKNOWNTARGET(_raw_start_time, input_user->_nickname, target);
-        input_user->_pending_data._send.append(ERR_NOSUCHNICK(input_user, target));
+        input_user->_pending_data._send.append(ERR_NOSUCHNICK(target));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return &input_user->_pending_data._recv;
     }
@@ -715,7 +715,7 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
     running_channels_iterator_t running_channel_iterator = _running_channels.find(channel); 
     if(running_channel_iterator == _running_channels.end())
     {
-        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, channel)); 
+        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(channel)); 
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
@@ -723,7 +723,7 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
     std::map<User *, const bool>::iterator user_iterator = running_channel_iterator->second->_members.find(input_user); 
     if(user_iterator->second != true)
     {
-        input_user->_pending_data._send.append(ERR_NOPRIVILEGES(input_user, channel)); 
+        input_user->_pending_data._send.append(ERR_NOPRIVILEGES(channel)); 
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;
     }
@@ -738,7 +738,7 @@ irc::Server::cmd_kick(const int input_socket, const std::string command_line, Us
     user_iterator = running_channel_iterator->second->_members.find(user_target->second);  
     if (user_iterator == running_channel_iterator->second->_members.end())
     {
-        input_user->_pending_data._send.append(ERR_USERNOTINCHANNEL(input_user->_nickname, user, channel)); 
+        input_user->_pending_data._send.append(ERR_USERNOTINCHANNEL(user, channel)); 
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send))); 
         return &input_user->_pending_data._recv;
     }
@@ -825,13 +825,13 @@ irc::Server::make_user_part(User * input_user, const std::string channel_name, c
         }
         else
         {
-            input_user->_pending_data._send.append(ERR_NOTONCHANNEL(input_user, channel_name));
+            input_user->_pending_data._send.append(ERR_NOTONCHANNEL(channel_name));
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         }
     }
     else
     {
-        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, channel_name));
+        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(channel_name));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
     }
 }
@@ -908,7 +908,7 @@ std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::str
     std::map<std::string , User * >::iterator user_it = _connected_users.find(reciever);
     if(user_it == _connected_users.end())
     {
-        ret = ERR_NOSUCHNICK(input_user, reciever);
+        ret = ERR_NOSUCHNICK(reciever);
         input_user->_pending_data._send.append(ret);
         _pending_sends.insert(std::make_pair(input_socket, &(input_user->_pending_data._send)));
         return &input_user->_pending_data._recv;         
@@ -936,7 +936,7 @@ void irc::Server::privmsg_hashtag_case(std::string command_line, User *input_use
     if(running_channels_iterator == _running_channels.end())
     {
         
-        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(input_user, chan));
+        input_user->_pending_data._send.append(ERR_NOSUCHCHANNEL(chan));
         _pending_sends.insert(std::make_pair(input_user->_own_socket, &input_user->_pending_data._send));
         return ; 
     }
