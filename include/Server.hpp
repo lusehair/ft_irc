@@ -174,7 +174,6 @@ namespace irc
 
             void set_password( const std::string new_password );
 
-            bool user_acquired( const int fd );
             void loop( void );
 
             typedef std::string * (irc::Server::*command_function)( const int, const std::string, User * );
@@ -182,6 +181,11 @@ namespace irc
             void remove_empty_chan( Channel * target_chan );
 
         private:
+            void accept_connection( int & number_of_ready_sockets );
+            void receive_from_unnamed_users( int & number_of_ready_sockets );
+            void receive_from_connected_users( int & number_of_ready_sockets );
+            void remove_killed_users( void );
+
             static std::map<const std::string, command_function>    _commands;
             void init_commands_map( void );
 
