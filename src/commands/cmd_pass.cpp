@@ -42,15 +42,15 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
         return &input_user->_pending_data._recv;
     }
 
+    unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
+    //_opened_sockets.insert(input_socket);
+
     if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
     {
-        input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, PASS));
-        _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
-        return &input_user->_pending_data._recv;
+        current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS("*", PASS));
+        _pending_sends.insert(std::make_pair(input_socket, &(current_unnamed_user->second._pending_data._send)));
+        return &current_unnamed_user->second._pending_data._recv;
     }
-
-    unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
-    _opened_sockets.insert(input_socket);
 
     std::string clean_pass = command_line.substr(strlen(PASS) + 1); 
     if(clean_pass.size() != _passlength)
