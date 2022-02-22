@@ -28,7 +28,11 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
     {
         for(running_channel_iterator = _running_channels.begin(); running_channel_iterator != _running_channels.end() ; running_channel_iterator++)
         {
-            ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + " " + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
+            std::stringstream members_count_ss;
+            members_count_ss << running_channel_iterator->second->_members_count;
+            ret_list.append(RPL_LIST(input_user
+                , input_user->_nickname
+                , running_channel_iterator->first) + " " + members_count_ss.str() + " :\r\n");
         }
     }
     else
@@ -41,7 +45,11 @@ std::string   *irc::Server::cmd_list(const int input_socket, const std::string c
             std::string require_channel = command_line.substr(start, end - start); 
             if ((running_channel_iterator = _running_channels.find(require_channel)) != _running_channels.end())
             {
-                ret_list.append(RPL_LIST(input_user, input_user->_nickname, running_channel_iterator->first) + " " + std::to_string(running_channel_iterator->second->_members_count) + " :\r\n");
+            std::stringstream members_count_ss;
+            members_count_ss << running_channel_iterator->second->_members_count;
+                ret_list.append(RPL_LIST(input_user
+                    , input_user->_nickname
+                    , running_channel_iterator->first) + " " + members_count_ss.str() + " :\r\n");
             }
             pos = end; 
         }

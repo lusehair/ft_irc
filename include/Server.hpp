@@ -14,6 +14,7 @@
 # include <iostream>
 # include <unistd.h>
 # include <fstream>
+# include <sstream>
 
 // INET6_ADDRSTRLEN
 # include <netinet/in.h>
