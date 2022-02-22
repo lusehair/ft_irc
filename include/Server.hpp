@@ -181,7 +181,10 @@ namespace irc
             void remove_empty_chan( Channel * target_chan );
 
         private:
-            void accept_connection(int & number_of_ready_sockets);
+            void accept_connection( int & number_of_ready_sockets );
+            void receive_from_unnamed_users( int & number_of_ready_sockets );
+            void receive_from_connected_users( int & number_of_ready_sockets );
+            void remove_killed_users( void );
 
             static std::map<const std::string, command_function>    _commands;
             void init_commands_map( void );
