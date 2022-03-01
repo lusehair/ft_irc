@@ -10,6 +10,7 @@ template <>
 void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterator>(std::map<int, pending_socket>::iterator unnamed_user_iterator)
 {
     std::string * received_data = &(unnamed_user_iterator->second._pending_data._recv);
+    int     working_socket = unnamed_user_iterator->first;
     size_t  endl_pos;
     size_t  last_endl_pos = 0;
     
@@ -32,8 +33,13 @@ void irc::Server::cmd_caller<std::map<int, irc::Server::pending_socket>::iterato
                 return ;
             }
         }
-        
+
         last_endl_pos = endl_pos + 2;
+
+        if (irc::Server::_unnamed_users.count(working_socket) != 1)
+        {
+            break ;
+        }
     }
     received_data->erase(0, last_endl_pos);
 }
