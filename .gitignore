@@ -2,3 +2,4 @@ a.out
 build
 ircserv
 .log
+.bot*
