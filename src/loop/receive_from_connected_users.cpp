@@ -47,6 +47,7 @@ irc::Server::receive_from_connected_users(int & number_of_ready_sockets)
             quit_all_chan(tmp_connected_user_iterator->second, reason);
             close(tmp_connected_user_iterator->second->_own_socket);
             _opened_sockets.erase(tmp_connected_user_iterator->second->_own_socket);
+            _pending_sends.erase(tmp_connected_user_iterator->second->_own_socket);
             FD_CLR(tmp_connected_user_iterator->second->_own_socket, &_client_sockets);
             _connected_users.erase(tmp_connected_user_iterator);
         }

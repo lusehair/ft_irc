@@ -13,7 +13,7 @@ int main(int ac, char **av)
 {
     irc::Server * main_server;
 
-    if (ac != 3) {
+    if (ac != 3 || *(av[2]) == '\0') {
         std::cout << "Please launch the program using: '" << av[0] << " <port> <password>'\n";
         return (0);
     }
