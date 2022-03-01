@@ -43,7 +43,6 @@ std::string * irc::Server::cmd_pass(const int input_socket, const std::string co
     }
 
     unnamed_users_iterator_t current_unnamed_user = _unnamed_users.insert(std::make_pair(input_socket, pending_socket())).first;
-    //_opened_sockets.insert(input_socket);
 
     if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
     {
