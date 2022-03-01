@@ -19,7 +19,7 @@ std::string * irc::Server::cmd_nick(const int input_socket, const std::string co
     {
         if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
         {
-            input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, LIST)); 
+            input_user->_pending_data._send.append(ERR_NEEDMOREPARAMS(input_user->_nickname, NICK)); 
             _pending_sends.insert(std::make_pair(input_user->_own_socket, &(input_user->_pending_data._send)));
             return &input_user->_pending_data._recv;
         }
@@ -54,9 +54,9 @@ std::string * irc::Server::cmd_nick(const int input_socket, const std::string co
 
         if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
         {
-            current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS(current_unnamed_user->second.nickname, LIST)); 
+            current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS(current_unnamed_user->second.nickname, NICK)); 
             _pending_sends.insert(std::make_pair(input_socket, &(current_unnamed_user->second._pending_data._send)));
-            return &input_user->_pending_data._recv;
+            return &current_unnamed_user->second._pending_data._recv;
         }
 
         std::string nick = command_line.substr(strlen(NICK) + 1);

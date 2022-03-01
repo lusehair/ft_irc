@@ -51,7 +51,7 @@ std::string *    irc::Server::cmd_privmsg(const int input_socket, const std::str
         return &input_user->_pending_data._recv;         
     }
 
-    user_it->second->_pending_data._send.append(ret);
+    user_it->second->_pending_data._send.append(ret + "\r\n");
     _pending_sends.insert(std::make_pair(user_it->second->_own_socket, &(user_it->second->_pending_data._send)));
     return &input_user->_pending_data._recv;
 }
