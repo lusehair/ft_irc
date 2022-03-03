@@ -8,7 +8,7 @@ irc::Server::receive_from_connected_users(int & number_of_ready_sockets)
     int                                             byte_count;
 
     connected_user_iterator = _connected_users.begin();
-    while (number_of_ready_sockets > 0 && connected_user_iterator != _connected_users.end())
+    while (connected_user_iterator != _connected_users.end())
     {
         tmp_connected_user_iterator = connected_user_iterator;
         ++connected_user_iterator;
@@ -47,8 +47,13 @@ irc::Server::receive_from_connected_users(int & number_of_ready_sockets)
             quit_all_chan(tmp_connected_user_iterator->second, reason);
             close(tmp_connected_user_iterator->second->_own_socket);
             _opened_sockets.erase(tmp_connected_user_iterator->second->_own_socket);
+            _pending_sends.erase(tmp_connected_user_iterator->second->_own_socket);
             FD_CLR(tmp_connected_user_iterator->second->_own_socket, &_client_sockets);
             _connected_users.erase(tmp_connected_user_iterator);
+        }
+        else if (!tmp_connected_user_iterator->second->_pending_data._recv.empty())
+        {
+            cmd_caller(tmp_connected_user_iterator->second);
         }
     }
 }
