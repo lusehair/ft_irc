@@ -15,7 +15,7 @@ std::string *    irc::Server::cmd_ping(const int input_socket, const std::string
         LOG_PONGNOREGISTERUSER(_raw_start_time, input_socket);
         unnamed_users_iterator_t current_unnamed_user = _unnamed_users.find(input_socket);
         current_unnamed_user->second._pending_data._send.append(ERR_NOTREGISTERED);
-        _pending_sends.insert(std::make_pair(input_socket, &current_unnamed_user->second._pending_data._recv));
+        _pending_sends.insert(std::make_pair(input_socket, &current_unnamed_user->second._pending_data._send));
         return &current_unnamed_user->second._pending_data._recv;
     }
     else if(input_user->_already_dead)

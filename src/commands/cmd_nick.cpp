@@ -54,7 +54,7 @@ std::string * irc::Server::cmd_nick(const int input_socket, const std::string co
 
         if (std::count(command_line.begin(), command_line.end(), ' ') < 1)
         {
-            current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS(current_unnamed_user->second.nickname, NICK)); 
+            current_unnamed_user->second._pending_data._send.append(ERR_NEEDMOREPARAMS("*", NICK)); 
             _pending_sends.insert(std::make_pair(input_socket, &(current_unnamed_user->second._pending_data._send)));
             return &current_unnamed_user->second._pending_data._recv;
         }
